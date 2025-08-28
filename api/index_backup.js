@@ -8,25 +8,22 @@ const fs = require('fs');
 
 const app = express();
 
-// Determine if we're in production (Vercel) or development
-const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
-// Configure multer for memory storage in production, disk storage in development
-const storage = isProduction 
-  ? multer.memoryStorage() // Store in memory for production (Vercel)
-  : multer.diskStorage({   // Store on disk for development
-      destination: (req, file, cb) => {
-        const uploadsDir = path.join(__dirname, 'uploads');
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        cb(null, uploadsDir);
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'blog-' + uniqueSuffix + path.extname(file.originalname));
-      }
-    });
+// Multer configuration for image upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'blog-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
@@ -44,72 +41,6 @@ const upload = multer({
   }
 });
 
-// Function to upload image to external service or fallback to base64
-async function uploadImageToExternal(imageBuffer, originalName, mimeType) {
-  try {
-    // Option 1: Cloudinary (recommended for production)
-    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
-      return await uploadToCloudinary(imageBuffer, originalName, mimeType);
-    }
-    
-    // Option 2: Fallback to base64 (works everywhere but larger file sizes)
-    console.log('Using base64 fallback for image storage');
-    const base64 = imageBuffer.toString('base64');
-    return `data:${mimeType};base64,${base64}`;
-  } catch (error) {
-    console.error('Image processing failed:', error.message);
-    // Emergency fallback
-    const base64 = imageBuffer.toString('base64');
-    return `data:${mimeType};base64,${base64}`;
-  }
-}
-
-// Cloudinary upload function (optional - requires credentials)
-async function uploadToCloudinary(imageBuffer, originalName, mimeType) {
-  try {
-    const FormData = require('form-data');
-    const axios = require('axios');
-    
-    const form = new FormData();
-    form.append('file', imageBuffer, {
-      filename: originalName,
-      contentType: mimeType,
-    });
-    form.append('upload_preset', 'ml_default'); // or create a custom preset
-    
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const response = await axios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      form,
-      {
-        headers: {
-          ...form.getHeaders(),
-        },
-      }
-    );
-
-    if (response.data && response.data.secure_url) {
-      console.log('Image uploaded to Cloudinary:', response.data.secure_url);
-      return response.data.secure_url;
-    } else {
-      throw new Error('Failed to get image URL from Cloudinary');
-    }
-  } catch (error) {
-    console.error('Cloudinary upload failed:', error.message);
-    throw error; // Let the main function handle fallback
-  }
-}
-
-// Ensure uploads directory exists (only for development)
-if (!isProduction) {
-  const uploadsDir = path.join(__dirname, 'uploads');
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-  // Serve static images in development
-  app.use('/api/uploads', express.static(uploadsDir));
-}
-
 // CORS configuration - allow all origins for testing
 app.use(cors({
   origin: '*',
@@ -120,6 +51,9 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static images
+app.use('/api/uploads', express.static(uploadsDir));
 
 // In-memory storage (since Vercel /tmp is ephemeral)
 let adminData = {
@@ -134,7 +68,7 @@ let blogsData = [
     title: 'Welcome to Fathi.vlogs',
     description: 'My journey as an engineering student exploring the world of technology, coding, and innovation.',
     content: 'Welcome to my personal blog! 👋\n\nI\'m Fathima, an engineering student passionate about technology, coding, and innovation. This blog is where I share my learning journey, project experiences, and insights from the fascinating world of engineering.\n\nFrom coding challenges to breakthrough moments, from failed experiments to successful implementations - I believe every step of the learning process has value. Through this platform, I hope to connect with fellow learners, share knowledge, and inspire others who are on similar paths.\n\nWhat you can expect to find here:\n• Technical tutorials and guides\n• Project showcases and case studies\n• Learning resources and recommendations\n• Personal reflections on the engineering journey\n• Industry insights and trends\n\nWhether you\'re a fellow student, a seasoned professional, or simply someone curious about technology, I hope you find something valuable here. Let\'s learn and grow together!\n\nFeel free to reach out if you have questions, suggestions, or just want to connect. Happy reading! 🚀',
-    image: '', // No image for sample blog
+    image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFYSURBVCiRpZM9SwNBEIafgwQLwcJCG1sLG1sLbW0tLWwsLCwsLLSxsLGwsLCwsLGwsLCwsLCwsLGwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwsLCwsLGwsLCwsLCwgFzhWBFJeEoA6DKwqIqAAGhVlUPQwQqAQ=',
     publishDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -183,8 +117,7 @@ app.get('/api/test', (req, res) => {
       _id: blog._id,
       title: blog.title,
       isPublished: blog.isPublished,
-      hasImage: !!blog.image,
-      imageUrl: blog.image
+      hasImage: !!blog.image
     }))
   });
 });
@@ -264,7 +197,8 @@ app.get('/api/blogs', (req, res) => {
         id: blog._id,
         isPublished: blog.isPublished,
         hasImage: !!blog.image,
-        imageUrl: blog.image
+        imageLength: blog.image ? blog.image.length : 0,
+        imageStart: blog.image ? blog.image.substring(0, 50) : 'no image'
       });
     });
     
@@ -313,15 +247,14 @@ app.get('/api/blogs/:id', (req, res) => {
 });
 
 // Create blog
-app.post('/api/blogs', upload.single('image'), async (req, res) => {
+app.post('/api/blogs', upload.single('image'), (req, res) => {
   try {
     console.log('Create blog request body keys:', Object.keys(req.body));
-    console.log('Environment:', { isProduction, vercel: !!process.env.VERCEL });
     console.log('Uploaded file:', req.file ? {
-      filename: req.file.filename || 'memory-stored',
+      filename: req.file.filename,
       originalname: req.file.originalname,
       size: req.file.size,
-      hasBuffer: !!req.file.buffer
+      path: req.file.path
     } : 'No file uploaded');
     
     const { title, description, content, tags, isPublished } = req.body;
@@ -342,27 +275,8 @@ app.post('/api/blogs', upload.single('image'), async (req, res) => {
     
     const blogs = getBlogs();
     
-    // Handle image upload based on environment
-    let imageUrl = '';
-    if (req.file) {
-      if (isProduction) {
-        // Production: Upload to external service
-        console.log('Production mode: Processing image...');
-        try {
-          imageUrl = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
-          console.log('Image processed for production:', imageUrl.substring(0, 50) + '...');
-        } catch (error) {
-          console.error('Failed to process image:', error);
-          // Fallback to base64 in case of processing failure
-          const base64 = req.file.buffer.toString('base64');
-          imageUrl = `data:${req.file.mimetype};base64,${base64}`;
-        }
-      } else {
-        // Development: Use local file storage
-        imageUrl = `/api/uploads/${req.file.filename}`;
-        console.log('Development mode: Using local storage:', imageUrl);
-      }
-    }
+    // Generate image URL if file was uploaded
+    const imageUrl = req.file ? `/api/uploads/${req.file.filename}` : '';
     
     const newBlog = {
       _id: Date.now().toString(),
@@ -372,7 +286,7 @@ app.post('/api/blogs', upload.single('image'), async (req, res) => {
       tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
       isPublished: isPublished === 'true' || isPublished === true,
       views: 0,
-      image: imageUrl, // Store URL (external or local)
+      image: imageUrl, // Store URL instead of base64
       publishDate: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -390,15 +304,14 @@ app.post('/api/blogs', upload.single('image'), async (req, res) => {
 });
 
 // Update blog
-app.put('/api/blogs/:id', upload.single('image'), async (req, res) => {
+app.put('/api/blogs/:id', upload.single('image'), (req, res) => {
   try {
     console.log('Update blog request body keys:', Object.keys(req.body));
-    console.log('Environment:', { isProduction, vercel: !!process.env.VERCEL });
     console.log('Uploaded file:', req.file ? {
-      filename: req.file.filename || 'memory-stored',
+      filename: req.file.filename,
       originalname: req.file.originalname,
       size: req.file.size,
-      hasBuffer: !!req.file.buffer
+      path: req.file.path
     } : 'No file uploaded');
     
     const { title, description, content, tags, isPublished } = req.body;
@@ -421,33 +334,17 @@ app.put('/api/blogs/:id', upload.single('image'), async (req, res) => {
       updatedAt: new Date().toISOString()
     };
     
-    // Handle image update based on environment
+    // Update image if new file was provided
     if (req.file) {
-      if (isProduction) {
-        // Production: Upload to external service
-        console.log('Production mode: Processing image...');
-        try {
-          const imageUrl = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
-          updatedBlog.image = imageUrl;
-          console.log('Image processed for production:', imageUrl.substring(0, 50) + '...');
-        } catch (error) {
-          console.error('Failed to process image:', error);
-          // Fallback to base64 in case of processing failure
-          const base64 = req.file.buffer.toString('base64');
-          updatedBlog.image = `data:${req.file.mimetype};base64,${base64}`;
+      // Delete old image file if it exists
+      if (blogs[blogIndex].image && blogs[blogIndex].image.startsWith('/api/uploads/')) {
+        const oldImagePath = path.join(uploadsDir, path.basename(blogs[blogIndex].image));
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+          console.log('Deleted old image:', oldImagePath);
         }
-      } else {
-        // Development: Use local file storage and clean up old file
-        if (blogs[blogIndex].image && blogs[blogIndex].image.startsWith('/api/uploads/')) {
-          const oldImagePath = path.join(__dirname, 'uploads', path.basename(blogs[blogIndex].image));
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-            console.log('Deleted old image:', oldImagePath);
-          }
-        }
-        updatedBlog.image = `/api/uploads/${req.file.filename}`;
-        console.log('Development mode: Using local storage:', updatedBlog.image);
       }
+      updatedBlog.image = `/api/uploads/${req.file.filename}`;
     }
     
     blogs[blogIndex] = updatedBlog;
@@ -473,9 +370,9 @@ app.delete('/api/blogs/:id', (req, res) => {
     
     const blog = blogs[blogIndex];
     
-    // Delete local image file only in development (production images are on external service)
-    if (!isProduction && blog.image && blog.image.startsWith('/api/uploads/')) {
-      const imagePath = path.join(__dirname, 'uploads', path.basename(blog.image));
+    // Delete image file if it exists
+    if (blog.image && blog.image.startsWith('/api/uploads/')) {
+      const imagePath = path.join(uploadsDir, path.basename(blog.image));
       if (fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
         console.log('Deleted image file:', imagePath);
@@ -497,18 +394,5 @@ app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ message: 'Internal server error' });
 });
-
-// Start server if not being imported as a module
-if (require.main === module) {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Fathi.vlogs API server running on port ${PORT}`);
-    console.log(`🌐 Environment: ${isProduction ? 'Production' : 'Development'}`);
-    if (!isProduction) {
-      console.log(`📁 Upload directory: ${path.join(__dirname, 'uploads')}`);
-    }
-    console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-  });
-}
 
 module.exports = app;

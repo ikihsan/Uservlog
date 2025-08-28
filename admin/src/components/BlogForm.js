@@ -21,6 +21,15 @@ const BlogForm = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Helper function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    // For relative URLs, prepend the API base URL
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    return imageUrl.startsWith('/api/') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+  };
+
   const fetchBlog = useCallback(async () => {
     try {
       setFetchLoading(true);
@@ -234,13 +243,17 @@ const BlogForm = () => {
             {currentImage && (
               <div style={{ marginBottom: '1rem' }}>
                 <img 
-                  src={`http://localhost:5000${currentImage}`}
+                  src={getImageUrl(currentImage)}
                   alt="Current blog"
                   style={{
                     maxWidth: '200px',
                     height: 'auto',
                     borderRadius: '8px',
                     border: '1px solid rgba(99, 102, 241, 0.3)'
+                  }}
+                  onError={(e) => {
+                    console.log('Admin panel image failed to load:', getImageUrl(currentImage));
+                    e.target.style.display = 'none';
                   }}
                 />
                 <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.5rem' }}>

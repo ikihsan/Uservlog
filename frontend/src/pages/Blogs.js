@@ -47,6 +47,15 @@ const Blogs = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Helper function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    // For relative URLs, prepend the API base URL
+    const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+    return imageUrl.startsWith('/api/') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -92,15 +101,20 @@ const Blogs = () => {
           <>
             {blogs.length > 0 ? (
               <div className="blog-grid">
-                {blogs.map((blog) => (
+                {blogs.map((blog) => {
+                  return (
                   <Link to={`/blogs/${blog._id}`} key={blog._id} className="blog-card">
-                    {blog.image ? (
+                    {blog.image && blog.image.trim() !== '' ? (
                       <img 
-                        src={`http://localhost:5000${blog.image}`} 
+                        src={getImageUrl(blog.image)} 
                         alt={blog.title}
                         className="blog-card-image"
                         onError={(e) => {
+                          console.log('Image failed to load:', blog.title, 'URL:', getImageUrl(blog.image));
                           e.target.style.display = 'none';
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', blog.title, 'URL:', getImageUrl(blog.image));
                         }}
                       />
                     ) : (
@@ -136,7 +150,7 @@ const Blogs = () => {
                       )}
                     </div>
                   </Link>
-                ))}
+                )})}
               </div>
             ) : (
               <div style={{ 

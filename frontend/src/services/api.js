@@ -56,20 +56,19 @@ export const blogAPI = {
     api.get(`/blogs/${id}`),
 
   // Create new blog
-  createBlog: (formData) => 
-    api.post('/blogs', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }),
+  createBlog: (blogData) => {
+    console.log('Creating blog with data:', {
+      title: blogData.title,
+      hasImage: !!blogData.image,
+      imageLength: blogData.image ? blogData.image.length : 0,
+      imageStart: blogData.image ? blogData.image.substring(0, 50) : 'no image'
+    });
+    return api.post('/blogs', blogData);
+  },
 
   // Update blog
-  updateBlog: (id, formData) => 
-    api.put(`/blogs/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }),
+  updateBlog: (id, blogData) => 
+    api.put(`/blogs/${id}`, blogData),
 
   // Delete blog
   deleteBlog: (id) => 
