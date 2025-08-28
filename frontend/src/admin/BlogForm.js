@@ -15,6 +15,7 @@ const BlogForm = () => {
     isPublished: true
   });
   const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [currentImage, setCurrentImage] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(isEditing);
@@ -66,14 +67,21 @@ const BlogForm = () => {
         return;
       }
       
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image size should be less than 5MB.');
+      // Validate file size (2MB limit for base64)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Image size should be less than 2MB.');
         return;
       }
       
-      setImage(file);
-      setError('');
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Image = e.target.result;
+        setImage(base64Image);
+        setImagePreview(base64Image);
+        setError('');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -96,16 +104,14 @@ const BlogForm = () => {
       }
 
       // Prepare form data
-      const submitData = new FormData();
-      submitData.append('title', formData.title.trim());
-      submitData.append('description', formData.description.trim());
-      submitData.append('content', formData.content.trim());
-      submitData.append('tags', formData.tags.trim());
-      submitData.append('isPublished', formData.isPublished);
-      
-      if (image) {
-        submitData.append('image', image);
-      }
+      const submitData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        content: formData.content.trim(),
+        tags: formData.tags.trim(),
+        isPublished: formData.isPublished,
+        image: image || '' // Include base64 image data
+      };
 
       if (isEditing) {
         await blogAPI.updateBlog(id, submitData);
@@ -231,10 +237,12 @@ const BlogForm = () => {
 
           <div className="form-group">
             <label htmlFor="image" className="form-label">Featured Image</label>
-            {currentImage && (
+            
+            {/* Current image display */}
+            {currentImage && !imagePreview && (
               <div style={{ marginBottom: '1rem' }}>
                 <img 
-                  src={`http://localhost:5000${currentImage}`}
+                  src={currentImage.startsWith('data:') ? currentImage : `https://fathi-vlogs-qdym4qnqr-ihsans-projects-683c36d4.vercel.app${currentImage}`}
                   alt="Current blog"
                   style={{
                     maxWidth: '200px',
@@ -248,6 +256,46 @@ const BlogForm = () => {
                 </p>
               </div>
             )}
+            
+            {/* New image preview */}
+            {imagePreview && (
+              <div style={{ marginBottom: '1rem' }}>
+                <img 
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{
+                    maxWidth: '200px',
+                    height: 'auto',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(99, 102, 241, 0.3)'
+                  }}
+                />
+                <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                  New image preview
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImage(null);
+                    setImagePreview('');
+                    document.getElementById('image').value = '';
+                  }}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    marginTop: '0.5rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Remove Image
+                </button>
+              </div>
+            )}
+            
             <input
               type="file"
               id="image"
@@ -257,7 +305,7 @@ const BlogForm = () => {
               accept="image/*"
             />
             <small style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-              Supported formats: JPG, PNG, GIF. Max size: 5MB
+              Supported formats: JPG, PNG, GIF. Max size: 2MB
             </small>
           </div>
 

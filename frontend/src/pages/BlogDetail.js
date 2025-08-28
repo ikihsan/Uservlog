@@ -25,6 +25,15 @@ const BlogDetail = () => {
     fetchBlog();
   }, [id]);
 
+  // Helper function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    // For relative URLs, prepend the API base URL
+    const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+    return imageUrl.startsWith('/api/') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -106,11 +115,15 @@ const BlogDetail = () => {
 
           {blog.image && (
             <img 
-              src={`http://localhost:5000${blog.image}`} 
+              src={getImageUrl(blog.image)} 
               alt={blog.title}
               className="blog-detail-image"
               onError={(e) => {
+                console.log('Blog detail image failed to load:', blog.title, 'URL:', getImageUrl(blog.image));
                 e.target.style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log('Blog detail image loaded successfully:', blog.title, 'URL:', getImageUrl(blog.image));
               }}
             />
           )}
