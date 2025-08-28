@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "fathi-vlogs",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -23,13 +22,5 @@
       "src": "/(.*)",
       "dest": "/frontend/build/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }

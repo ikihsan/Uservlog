@@ -33,8 +33,8 @@ const Blogs = () => {
   };
 
   useEffect(() => {
-    fetchBlogs(1, searchTerm);
-  }, []);
+    fetchBlogs(1, ''); // Start with empty search term
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e) => {
     e.preventDefault();
