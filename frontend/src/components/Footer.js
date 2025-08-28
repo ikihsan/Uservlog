@@ -44,10 +44,10 @@ const Footer = () => {
 
         <div className="footer-bottom">
           <div className="footer-copyright">
-            <p>&copy; {currentYear} UserBlog. All rights reserved.</p>
+            <p>&copy; {currentYear} fathi.vlogs. All rights reserved.</p>
           </div>
           <div className="footer-credits">
-            <p>Built with ❤️ by <span className="credits-highlight">ikcodes</span></p>
+            <p>Built with ❤️ and lots of ☕ by <span className="credits-highlight">Fathima NK</span></p>
           </div>
         </div>
       </div>

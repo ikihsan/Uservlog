@@ -28,7 +28,7 @@ app.use('/api/blogs', blogRoutes);
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
-    message: 'UserBlog API is running!', 
+    message: 'fathi.vlogs API is running!', 
     timestamp: new Date().toISOString(),
     database: global.useFileStorage ? 'File Storage' : 'MongoDB',
     status: 'healthy'

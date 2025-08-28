@@ -118,7 +118,18 @@ const Home = () => {
       {/* Features Section */}
       <section className="section" style={{ background: 'rgba(30, 41, 59, 0.1)' }}>
         <div className="container">
-          <h2 className="section-title">Why Choose UserBlog?</h2>
+          <h2 className="section-title">"The Journey of a Thousand Miles Begins with One Step"</h2>
+          <p style={{ 
+            textAlign: 'center', 
+            color: '#94a3b8', 
+            fontSize: '1.1rem', 
+            marginBottom: '40px',
+            maxWidth: '600px',
+            margin: '0 auto 40px auto'
+          }}>
+            Every great engineer started as a curious learner. Follow my journey through the world of technology, 
+            innovation, and personal growth.
+          </p>
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -127,23 +138,23 @@ const Home = () => {
           }}>
             <div className="card">
               <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎨</div>
-              <h3 style={{ marginBottom: '12px', color: '#e2e8f0' }}>Modern Design</h3>
+              <h3 style={{ marginBottom: '12px', color: '#e2e8f0' }}>Creative Expression</h3>
               <p style={{ color: '#94a3b8' }}>
-                Experience a futuristic, dark-themed interface with stunning gradients and smooth animations.
+                Where engineering meets creativity - sharing innovative ideas and artistic approaches to problem-solving.
               </p>
             </div>
             <div className="card">
               <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📱</div>
-              <h3 style={{ marginBottom: '12px', color: '#e2e8f0' }}>Responsive</h3>
+              <h3 style={{ marginBottom: '12px', color: '#e2e8f0' }}>Tech Journey</h3>
               <p style={{ color: '#94a3b8' }}>
-                Perfectly optimized for all devices - desktop, tablet, and mobile experiences.
+                From code to concepts - documenting my learning experiences and discoveries in the tech world.
               </p>
             </div>
             <div className="card">
               <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⚡</div>
-              <h3 style={{ marginBottom: '12px', color: '#e2e8f0' }}>Fast & Reliable</h3>
+              <h3 style={{ marginBottom: '12px', color: '#e2e8f0' }}>Growth Mindset</h3>
               <p style={{ color: '#94a3b8' }}>
-                Lightning-fast loading times and reliable performance for the best user experience.
+                Embracing challenges, learning from failures, and celebrating progress - one post at a time.
               </p>
             </div>
           </div>

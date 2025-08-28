@@ -1,18 +1,10 @@
 import axios from 'axios';
 
-// Determine API base URL based on environment
-const getApiBaseUrl = () => {
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.REACT_APP_API_URL || '/api';
-  }
-  return process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-};
-
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // Increased timeout for serverless functions
+  timeout: 10000,
 });
 
 // Request interceptor for adding auth token
@@ -35,32 +27,53 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('adminToken');
-      // Redirect to login if needed
+      window.location.reload();
     }
     return Promise.reject(error);
   }
 );
 
-// Blog API functions
-export const blogAPI = {
-  // Get all blogs (public)
-  getAllBlogs: (params = {}) => 
-    api.get('/blogs', { params }),
+// Auth API functions
+export const authAPI = {
+  login: (credentials) => 
+    api.post('/auth/login', credentials),
 
-  // Get single blog by ID (public)
+  verifyToken: () => 
+    api.get('/auth/verify'),
+
+  validateToken: () => 
+    api.get('/auth/verify'),
+};
+
+// Blog API functions (Admin)
+export const blogAPI = {
+  // Get all blogs (admin)
+  getAllBlogs: (params = {}) => 
+    api.get('/blogs/admin/all', { params }),
+
+  // Get single blog by ID
   getBlogById: (id) => 
     api.get(`/blogs/${id}`),
 
-  // Search blogs
-  searchBlogs: (searchTerm, page = 1) => 
-    api.get('/blogs', { params: { search: searchTerm, page } }),
-};
+  // Create new blog
+  createBlog: (formData) => 
+    api.post('/blogs', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
 
-// Contact API functions
-export const contactAPI = {
-  // Send contact form
-  sendMessage: (data) => 
-    api.post('/contact', data),
+  // Update blog
+  updateBlog: (id, formData) => 
+    api.put(`/blogs/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+
+  // Delete blog
+  deleteBlog: (id) => 
+    api.delete(`/blogs/${id}`),
 };
 
 export default api;

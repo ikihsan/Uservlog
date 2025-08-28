@@ -2,6 +2,7 @@
   "name": "fathi-vlogs-admin",
   "version": "1.0.0",
   "description": "Admin panel for Fathi.vlogs application",
+  "homepage": "/admin",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",

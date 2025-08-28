@@ -98,10 +98,10 @@ const Dashboard = () => {
           <h2 className="card-title">Quick Actions</h2>
         </div>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link to="/blogs/new" className="btn btn-primary">
+          <Link to="/admin/blogs/new" className="btn btn-primary">
             ✏️ Create New Blog
           </Link>
-          <Link to="/blogs" className="btn btn-secondary">
+          <Link to="/admin/blogs" className="btn btn-secondary">
             📝 Manage Blogs
           </Link>
           <a 
@@ -119,7 +119,7 @@ const Dashboard = () => {
       <div className="card">
         <div className="card-header">
           <h2 className="card-title">Recent Blogs</h2>
-          <Link to="/blogs" className="btn btn-secondary btn-sm">
+          <Link to="/admin/blogs" className="btn btn-secondary btn-sm">
             View All
           </Link>
         </div>
@@ -164,7 +164,7 @@ const Dashboard = () => {
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <Link 
-                          to={`/blogs/edit/${blog._id}`}
+                          to={`/admin/blogs/edit/${blog._id}`}
                           className="btn btn-secondary btn-sm"
                         >
                           Edit
@@ -192,7 +192,7 @@ const Dashboard = () => {
           }}>
             <h3>No blogs found</h3>
             <p>Create your first blog to get started!</p>
-            <Link to="/blogs/new" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+            <Link to="/admin/blogs/new" className="btn btn-primary" style={{ marginTop: '1rem' }}>
               Create First Blog
             </Link>
           </div>

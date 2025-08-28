@@ -1,6 +1,8 @@
 # UserBlog Web Application
 
-A full-stack blog application with a modern, futuristic dark theme design.
+# Fathi.vlogs - Personal Engineering Blog
+
+Welcome to **Fathi.vlogs**, a personal blog platform where I share my journey as an engineering student, web development projects, and technical insights. Built with modern web technologies and a futuristic dark theme design.
 
 ## ✨ Features
 - 🎨 **Modern Dark Theme** - Futuristic design with gradient text and glowing buttons
@@ -50,7 +52,7 @@ A full-stack blog application with a modern, futuristic dark theme design.
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd userblog
+cd fathi-vlogs
 
 # Install dependencies for all components
 npm run install-all
@@ -64,7 +66,7 @@ cd ../admin && npm install
 Create a `.env` file in the backend directory:
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/userblog
+MONGODB_URI=mongodb://localhost:27017/fathi-vlogs
 JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123

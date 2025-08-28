@@ -117,7 +117,7 @@ const BlogForm = () => {
 
       // Redirect after a delay
       setTimeout(() => {
-        navigate('/blogs');
+        navigate('/admin/blogs');
       }, 1500);
 
     } catch (error) {
@@ -289,7 +289,7 @@ const BlogForm = () => {
           }}>
             <button
               type="button"
-              onClick={() => navigate('/blogs')}
+              onClick={() => navigate('/admin/blogs')}
               className="btn btn-secondary"
               disabled={loading}
             >

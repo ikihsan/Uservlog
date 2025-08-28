@@ -50,7 +50,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename="/admin">
       <div className="admin-container">
         <Header onLogout={handleLogout} />
         <main className="admin-main">

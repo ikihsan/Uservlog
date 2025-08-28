@@ -1,7 +1,7 @@
 {
-  "name": "userblog-backend",
+  "name": "fathi-vlogs-backend",
   "version": "1.0.0",
-  "description": "Backend API for UserBlog application",
+  "description": "Backend API for fathi.vlogs application",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

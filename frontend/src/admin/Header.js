@@ -5,18 +5,18 @@ const Header = ({ onLogout }) => {
   return (
     <header className="admin-header">
       <nav className="admin-nav">
-        <Link to="/" className="admin-logo">
+        <Link to="/admin" className="admin-logo">
           fathi.vlogs Admin
         </Link>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <Link to="/" className="btn btn-secondary btn-sm">
+          <Link to="/admin" className="btn btn-secondary btn-sm">
             Dashboard
           </Link>
-          <Link to="/blogs" className="btn btn-secondary btn-sm">
+          <Link to="/admin/blogs" className="btn btn-secondary btn-sm">
             Manage Blogs
           </Link>
-          <Link to="/blogs/new" className="btn btn-primary btn-sm">
+          <Link to="/admin/blogs/new" className="btn btn-primary btn-sm">
             New Blog
           </Link>
           <button 
