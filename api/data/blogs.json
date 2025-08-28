@@ -1,0 +1,19 @@
+[
+  {
+    "_id": "1",
+    "title": "Welcome to Fathi.vlogs",
+    "description": "My journey as a blogger and content creator",
+    "content": "Welcome to my personal blog! Here I share my thoughts, experiences, and insights about technology, life, and everything in between. This is my first blog post, and I'm excited to share my journey with you.",
+    "image": "",
+    "publishDate": "2025-08-28T15:38:56.225Z",
+    "createdAt": "2025-08-28T15:38:56.226Z",
+    "updatedAt": "2025-08-28T15:38:56.226Z",
+    "isPublished": true,
+    "views": 15,
+    "tags": [
+      "personal",
+      "welcome",
+      "introduction"
+    ]
+  }
+]

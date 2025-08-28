@@ -8,383 +8,214 @@ const fs = require('fs');
 
 const app = express();
 
-// Determine if we're in production (Vercel) or development
-const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+// Env
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
 
-// Configure multer for memory storage in production, disk storage in development
-const storage = isProduction 
-  ? multer.memoryStorage() // Store in memory for production (Vercel)
-  : multer.diskStorage({   // Store on disk for development
+// Multer storage: memory on Vercel, disk locally
+const uploadsDir = path.join(__dirname, 'uploads');
+const storage = isProduction
+  ? multer.memoryStorage()
+  : multer.diskStorage({
       destination: (req, file, cb) => {
-        const uploadsDir = path.join(__dirname, 'uploads');
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
+        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
         cb(null, uploadsDir);
       },
       filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'blog-' + uniqueSuffix + path.extname(file.originalname));
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, 'blog-' + unique + path.extname(file.originalname));
       }
     });
 
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed!'), false);
-  }
-};
-
-const upload = multer({ 
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    file.mimetype && file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Only image files are allowed!'));
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// Function to upload image to external service or fallback to base64
+// Image upload to Cloudinary or base64 fallback
 async function uploadImageToExternal(imageBuffer, originalName, mimeType) {
   try {
-    // Option 1: Cloudinary (recommended for production)
-    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
-      return await uploadToCloudinary(imageBuffer, originalName, mimeType);
+    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+      const FormData = require('form-data');
+      const axios = require('axios');
+      const form = new FormData();
+      form.append('file', imageBuffer, { filename: originalName, contentType: mimeType });
+      form.append('upload_preset', 'ml_default');
+      const url = `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`;
+      const { data } = await axios.post(url, form, { headers: form.getHeaders() });
+      if (data?.secure_url) return data.secure_url;
+      throw new Error('No secure_url from Cloudinary');
     }
-    
-    // Option 2: Fallback to base64 (works everywhere but larger file sizes)
-    console.log('Using base64 fallback for image storage');
-    const base64 = imageBuffer.toString('base64');
-    return `data:${mimeType};base64,${base64}`;
-  } catch (error) {
-    console.error('Image processing failed:', error.message);
-    // Emergency fallback
-    const base64 = imageBuffer.toString('base64');
-    return `data:${mimeType};base64,${base64}`;
+    // Fallback: data URL
+    return `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
+  } catch (e) {
+    // Final fallback
+    return `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
   }
 }
 
-// Cloudinary upload function (optional - requires credentials)
-async function uploadToCloudinary(imageBuffer, originalName, mimeType) {
-  try {
-    const FormData = require('form-data');
-    const axios = require('axios');
-    
-    const form = new FormData();
-    form.append('file', imageBuffer, {
-      filename: originalName,
-      contentType: mimeType,
-    });
-    form.append('upload_preset', 'ml_default'); // or create a custom preset
-    
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const response = await axios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      form,
-      {
-        headers: {
-          ...form.getHeaders(),
-        },
-      }
-    );
-
-    if (response.data && response.data.secure_url) {
-      console.log('Image uploaded to Cloudinary:', response.data.secure_url);
-      return response.data.secure_url;
-    } else {
-      throw new Error('Failed to get image URL from Cloudinary');
-    }
-  } catch (error) {
-    console.error('Cloudinary upload failed:', error.message);
-    throw error; // Let the main function handle fallback
-  }
-}
-
-// Ensure uploads directory exists (only for development)
-if (!isProduction) {
-  const uploadsDir = path.join(__dirname, 'uploads');
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-  // Serve static images in development
-  app.use('/api/uploads', express.static(uploadsDir));
-}
-
-// CORS configuration - allow all origins for testing
+// CORS
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false
 }));
-
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// In-memory storage (since Vercel /tmp is ephemeral)
-let adminData = {
-  username: 'admin',
-  password: bcrypt.hashSync('admin123', 10),
-  lastLogin: null
-};
+// Serve local uploads only in dev
+if (!isProduction) {
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+  app.use('/api/uploads', express.static(uploadsDir));
+}
 
-let blogsData = [
-  {
-    _id: '1',
-    title: 'Welcome to Fathi.vlogs',
-    description: 'My journey as an engineering student exploring the world of technology, coding, and innovation.',
-    content: 'Welcome to my personal blog! 👋\n\nI\'m Fathima, an engineering student passionate about technology, coding, and innovation. This blog is where I share my learning journey, project experiences, and insights from the fascinating world of engineering.\n\nFrom coding challenges to breakthrough moments, from failed experiments to successful implementations - I believe every step of the learning process has value. Through this platform, I hope to connect with fellow learners, share knowledge, and inspire others who are on similar paths.\n\nWhat you can expect to find here:\n• Technical tutorials and guides\n• Project showcases and case studies\n• Learning resources and recommendations\n• Personal reflections on the engineering journey\n• Industry insights and trends\n\nWhether you\'re a fellow student, a seasoned professional, or simply someone curious about technology, I hope you find something valuable here. Let\'s learn and grow together!\n\nFeel free to reach out if you have questions, suggestions, or just want to connect. Happy reading! 🚀',
-    image: '', // No image for sample blog
-    publishDate: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isPublished: true,
-    views: 42,
-    tags: ['welcome', 'engineering', 'journey']
-  },
-  {
-    _id: '2',
-    title: 'Getting Started with Web Development',
-    description: 'A beginner\'s guide to building your first web application.',
-    content: 'Web development is an exciting field that combines creativity with technical skills. In this post, I\'ll share some tips for getting started with web development.\n\nHere are the key technologies you should learn:\n\n1. HTML - The structure of web pages\n2. CSS - The styling and layout\n3. JavaScript - The interactive functionality\n4. React - A powerful frontend framework\n5. Node.js - Backend development\n\nRemember, practice makes perfect!',
-    image: '',
-    publishDate: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isPublished: true,
-    views: 15,
-    tags: ['webdev', 'beginner', 'tutorial']
-  }
-];
+// Data storage: /tmp in prod, repo folder in dev
+const dataDir = isProduction ? '/tmp/blog-data' : path.join(__dirname, 'data');
+const adminFile = path.join(dataDir, 'admin.json');
+const blogsFile = path.join(dataDir, 'blogs.json');
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-// Helper functions for data management
-const getBlogs = () => blogsData;
-const saveBlogs = (blogs) => { blogsData = blogs; };
-const getAdmin = () => adminData;
-const saveAdmin = (admin) => { adminData = admin; };
+// Helpers
+function readJsonSafe(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
+}
+function writeJsonSafe(file, data) {
+  try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); } catch {}
+}
+function getAdmin() { return readJsonSafe(adminFile, initAdmin()); }
+function saveAdmin(admin) { writeJsonSafe(adminFile, admin); }
+function getBlogs() { return readJsonSafe(blogsFile, initBlogs()); }
+function saveBlogs(blogs) { writeJsonSafe(blogsFile, blogs); }
+function initAdmin() {
+  const admin = { username: 'admin', password: bcrypt.hashSync('admin123', 10), lastLogin: null };
+  writeJsonSafe(adminFile, admin);
+  return admin;
+}
+function initBlogs() {
+  const blogs = [
+    {
+      _id: '1',
+      title: 'Welcome to Fathi.vlogs',
+      description: 'My journey as an engineering student exploring the world of technology, coding, and innovation.',
+      content: "Welcome to my personal blog! 👋\n\nI'm Fathima, an engineering student passionate about technology...",
+      image: '',
+      publishDate: new Date().toISOString(),
+      isPublished: true,
+      views: 42,
+      tags: ['welcome', 'engineering', 'journey'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ];
+  writeJsonSafe(blogsFile, blogs);
+  return blogs;
+}
 
-// Health check
+// Health
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'Fathi.vlogs API is running',
     timestamp: new Date().toISOString(),
-    totalBlogs: blogsData.length,
-    publishedBlogs: blogsData.filter(b => b.isPublished).length
+    environment: isProduction ? 'production' : 'development'
   });
 });
 
-// Test endpoint to check blogs data
-app.get('/api/test', (req, res) => {
-  res.json({
-    message: 'Test endpoint working',
-    blogsCount: blogsData.length,
-    blogs: blogsData.map(blog => ({
-      _id: blog._id,
-      title: blog.title,
-      isPublished: blog.isPublished,
-      hasImage: !!blog.image,
-      imageUrl: blog.image
-    }))
-  });
-});
-
-// Auth login
-app.post('/api/auth/login', async (req, res) => {
+// Auth
+app.post('/api/auth/login', (req, res) => {
   try {
-    console.log('Login request:', req.body);
-    
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password are required' });
-    }
-
+    const { username, password } = req.body || {};
+    if (!username || !password) return res.status(400).json({ message: 'Username and password are required' });
     const admin = getAdmin();
-    
-    if (username !== admin.username) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const isValidPassword = bcrypt.compareSync(password, admin.password);
-    
-    if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign(
-      { username: admin.username },
-      'your-secret-key',
-      { expiresIn: '24h' }
-    );
-
+    if (username !== admin.username) return res.status(401).json({ message: 'Invalid credentials' });
+    const ok = bcrypt.compareSync(password, admin.password);
+    if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+    const token = jwt.sign({ username: admin.username }, 'your-secret-key', { expiresIn: '24h' });
     admin.lastLogin = new Date().toISOString();
     saveAdmin(admin);
-
-    res.json({
-      message: 'Login successful',
-      token,
-      user: { username: adminData.username }
-    });
-
+    res.json({ message: 'Login successful', token, user: { username: admin.username } });
   } catch (error) {
-    console.error('Login error:', error);
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 });
 
-// Auth verify
 app.get('/api/auth/verify', (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
-    }
-
+    if (!token) return res.status(401).json({ message: 'No token provided' });
     const decoded = jwt.verify(token, 'your-secret-key');
     res.json({ valid: true, user: decoded });
-  } catch (error) {
+  } catch {
     res.status(401).json({ message: 'Invalid token' });
   }
 });
 
-// Get blogs (public)
+// Blogs (public)
 app.get('/api/blogs', (req, res) => {
   try {
-    console.log('GET /api/blogs called');
-    const blogs = getBlogs();
-    console.log('Total blogs available:', blogs.length);
-    const publishedBlogs = blogs.filter(blog => blog.isPublished);
-    console.log('Published blogs:', publishedBlogs.length);
-    
-    console.log('Returning blogs with image info:');
-    publishedBlogs.forEach((blog, index) => {
-      console.log(`Blog ${index + 1} (${blog.title}):`, {
-        id: blog._id,
-        isPublished: blog.isPublished,
-        hasImage: !!blog.image,
-        imageUrl: blog.image
-      });
-    });
-    
-    res.json(publishedBlogs);
-  } catch (error) {
-    console.error('Error in GET /api/blogs:', error);
-    res.status(500).json({ message: 'Error fetching blogs', error: error.message });
-  }
-});
-
-// Get all blogs (admin)
-app.get('/api/blogs/admin/all', (req, res) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
-    const blogs = getBlogs();
-    
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + parseInt(limit);
-    const paginatedBlogs = blogs.slice(startIndex, endIndex);
-    
-    res.json({
-      blogs: paginatedBlogs,
-      totalBlogs: blogs.length,
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(blogs.length / limit)
-    });
-  } catch (error) {
+    const published = getBlogs().filter(b => b.isPublished);
+    res.json(published);
+  } catch (e) {
     res.status(500).json({ message: 'Error fetching blogs' });
   }
 });
 
-// Get single blog
+// Single blog
 app.get('/api/blogs/:id', (req, res) => {
   try {
-    const blogs = getBlogs();
-    const blog = blogs.find(b => b._id === req.params.id);
-    
-    if (!blog) {
-      return res.status(404).json({ message: 'Blog not found' });
-    }
-    
+    const blog = getBlogs().find(b => b._id === req.params.id);
+    if (!blog) return res.status(404).json({ message: 'Blog not found' });
     res.json(blog);
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: 'Error fetching blog' });
+  }
+});
+
+// Admin list with pagination
+app.get('/api/blogs/admin/all', (req, res) => {
+  try {
+    const page = parseInt(req.query.page || '1', 10);
+    const limit = parseInt(req.query.limit || '10', 10);
+    const blogs = getBlogs();
+    const start = (page - 1) * limit;
+    const slice = blogs.slice(start, start + limit);
+    res.json({ blogs: slice, totalBlogs: blogs.length, currentPage: page, totalPages: Math.ceil(blogs.length / limit) });
+  } catch {
+    res.status(500).json({ message: 'Error fetching blogs' });
   }
 });
 
 // Create blog
 app.post('/api/blogs', upload.single('image'), async (req, res) => {
   try {
-    console.log('Create blog request body keys:', Object.keys(req.body));
-    console.log('Environment:', { isProduction, vercel: !!process.env.VERCEL });
-    console.log('Uploaded file:', req.file ? {
-      filename: req.file.filename || 'memory-stored',
-      originalname: req.file.originalname,
-      size: req.file.size,
-      hasBuffer: !!req.file.buffer
-    } : 'No file uploaded');
-    
-    const { title, description, content, tags, isPublished } = req.body;
-    
-    // Validate required fields
-    if (!title || !title.trim()) {
-      console.log('Title validation failed:', title);
-      return res.status(400).json({ message: 'Title is required' });
-    }
-    if (!description || !description.trim()) {
-      console.log('Description validation failed:', description);
-      return res.status(400).json({ message: 'Description is required' });
-    }
-    if (!content || !content.trim()) {
-      console.log('Content validation failed:', content);
-      return res.status(400).json({ message: 'Content is required' });
-    }
-    
+    const { title, description, content, tags, isPublished } = req.body || {};
+    if (!title?.trim() || !description?.trim() || !content?.trim()) return res.status(400).json({ message: 'Title, description and content are required' });
     const blogs = getBlogs();
-    
-    // Handle image upload based on environment
     let imageUrl = '';
     if (req.file) {
-      if (isProduction) {
-        // Production: Upload to external service
-        console.log('Production mode: Processing image...');
-        try {
-          imageUrl = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
-          console.log('Image processed for production:', imageUrl.substring(0, 50) + '...');
-        } catch (error) {
-          console.error('Failed to process image:', error);
-          // Fallback to base64 in case of processing failure
-          const base64 = req.file.buffer.toString('base64');
-          imageUrl = `data:${req.file.mimetype};base64,${base64}`;
-        }
-      } else {
-        // Development: Use local file storage
-        imageUrl = `/api/uploads/${req.file.filename}`;
-        console.log('Development mode: Using local storage:', imageUrl);
-      }
+      if (isProduction) imageUrl = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
+      else imageUrl = `/api/uploads/${req.file.filename}`;
     }
-    
     const newBlog = {
       _id: Date.now().toString(),
       title: title.trim(),
       description: description.trim(),
       content: content.trim(),
-      tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       isPublished: isPublished === 'true' || isPublished === true,
       views: 0,
-      image: imageUrl, // Store URL (external or local)
+      image: imageUrl,
       publishDate: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    
     blogs.unshift(newBlog);
     saveBlogs(blogs);
-    
-    console.log('Blog created successfully with image URL:', imageUrl);
     res.status(201).json({ message: 'Blog created successfully', blog: newBlog });
   } catch (error) {
-    console.error('Create blog error:', error);
     res.status(500).json({ message: 'Error creating blog', error: error.message });
   }
 });
@@ -392,71 +223,34 @@ app.post('/api/blogs', upload.single('image'), async (req, res) => {
 // Update blog
 app.put('/api/blogs/:id', upload.single('image'), async (req, res) => {
   try {
-    console.log('Update blog request body keys:', Object.keys(req.body));
-    console.log('Environment:', { isProduction, vercel: !!process.env.VERCEL });
-    console.log('Uploaded file:', req.file ? {
-      filename: req.file.filename || 'memory-stored',
-      originalname: req.file.originalname,
-      size: req.file.size,
-      hasBuffer: !!req.file.buffer
-    } : 'No file uploaded');
-    
-    const { title, description, content, tags, isPublished } = req.body;
+    const { title, description, content, tags, isPublished } = req.body || {};
     const blogs = getBlogs();
-    
-    const blogIndex = blogs.findIndex(b => b._id === req.params.id);
-    
-    if (blogIndex === -1) {
-      return res.status(404).json({ message: 'Blog not found' });
-    }
-    
-    // Update blog with new data
-    const updatedBlog = {
-      ...blogs[blogIndex],
-      title: title?.trim() || blogs[blogIndex].title,
-      description: description?.trim() || blogs[blogIndex].description,
-      content: content?.trim() || blogs[blogIndex].content,
-      tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : blogs[blogIndex].tags,
-      isPublished: isPublished !== undefined ? (isPublished === 'true' || isPublished === true) : blogs[blogIndex].isPublished,
+    const idx = blogs.findIndex(b => b._id === req.params.id);
+    if (idx === -1) return res.status(404).json({ message: 'Blog not found' });
+    const updated = {
+      ...blogs[idx],
+      title: title?.trim() || blogs[idx].title,
+      description: description?.trim() || blogs[idx].description,
+      content: content?.trim() || blogs[idx].content,
+      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : blogs[idx].tags,
+      isPublished: isPublished !== undefined ? (isPublished === 'true' || isPublished === true) : blogs[idx].isPublished,
       updatedAt: new Date().toISOString()
     };
-    
-    // Handle image update based on environment
     if (req.file) {
-      if (isProduction) {
-        // Production: Upload to external service
-        console.log('Production mode: Processing image...');
-        try {
-          const imageUrl = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
-          updatedBlog.image = imageUrl;
-          console.log('Image processed for production:', imageUrl.substring(0, 50) + '...');
-        } catch (error) {
-          console.error('Failed to process image:', error);
-          // Fallback to base64 in case of processing failure
-          const base64 = req.file.buffer.toString('base64');
-          updatedBlog.image = `data:${req.file.mimetype};base64,${base64}`;
+      if (isProduction) updated.image = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
+      else {
+        // clean old local image
+        if (blogs[idx].image && blogs[idx].image.startsWith('/api/uploads/')) {
+          const oldPath = path.join(uploadsDir, path.basename(blogs[idx].image));
+          if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath); } catch {} }
         }
-      } else {
-        // Development: Use local file storage and clean up old file
-        if (blogs[blogIndex].image && blogs[blogIndex].image.startsWith('/api/uploads/')) {
-          const oldImagePath = path.join(__dirname, 'uploads', path.basename(blogs[blogIndex].image));
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-            console.log('Deleted old image:', oldImagePath);
-          }
-        }
-        updatedBlog.image = `/api/uploads/${req.file.filename}`;
-        console.log('Development mode: Using local storage:', updatedBlog.image);
+        updated.image = `/api/uploads/${req.file.filename}`;
       }
     }
-    
-    blogs[blogIndex] = updatedBlog;
+    blogs[idx] = updated;
     saveBlogs(blogs);
-    
-    console.log('Blog updated successfully with image URL:', updatedBlog.image);
-    res.json({ message: 'Blog updated successfully', blog: updatedBlog });
+    res.json({ message: 'Blog updated successfully', blog: updated });
   } catch (error) {
-    console.error('Update blog error:', error);
     res.status(500).json({ message: 'Error updating blog', error: error.message });
   }
 });
@@ -465,29 +259,17 @@ app.put('/api/blogs/:id', upload.single('image'), async (req, res) => {
 app.delete('/api/blogs/:id', (req, res) => {
   try {
     const blogs = getBlogs();
-    const blogIndex = blogs.findIndex(b => b._id === req.params.id);
-    
-    if (blogIndex === -1) {
-      return res.status(404).json({ message: 'Blog not found' });
+    const idx = blogs.findIndex(b => b._id === req.params.id);
+    if (idx === -1) return res.status(404).json({ message: 'Blog not found' });
+    const blog = blogs[idx];
+    if (!isProduction && blog.image?.startsWith('/api/uploads/')) {
+      const img = path.join(uploadsDir, path.basename(blog.image));
+      if (fs.existsSync(img)) { try { fs.unlinkSync(img); } catch {} }
     }
-    
-    const blog = blogs[blogIndex];
-    
-    // Delete local image file only in development (production images are on external service)
-    if (!isProduction && blog.image && blog.image.startsWith('/api/uploads/')) {
-      const imagePath = path.join(__dirname, 'uploads', path.basename(blog.image));
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-        console.log('Deleted image file:', imagePath);
-      }
-    }
-    
-    blogs.splice(blogIndex, 1);
+    blogs.splice(idx, 1);
     saveBlogs(blogs);
-    
     res.json({ message: 'Blog deleted successfully' });
-  } catch (error) {
-    console.error('Delete blog error:', error);
+  } catch {
     res.status(500).json({ message: 'Error deleting blog' });
   }
 });
@@ -497,18 +279,6 @@ app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ message: 'Internal server error' });
 });
-
-// Start server if not being imported as a module
-if (require.main === module) {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Fathi.vlogs API server running on port ${PORT}`);
-    console.log(`🌐 Environment: ${isProduction ? 'Production' : 'Development'}`);
-    if (!isProduction) {
-      console.log(`📁 Upload directory: ${path.join(__dirname, 'uploads')}`);
-    }
-    console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-  });
-}
-
-module.exports = app;
+// Export Vercel Serverless function handler
+const serverless = require('serverless-http');
+module.exports = serverless(app);

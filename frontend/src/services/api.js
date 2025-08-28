@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// Use relative /api by default (Vercel), allow override via REACT_APP_API_URL for local/dev
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const api = axios.create({
