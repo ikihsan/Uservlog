@@ -463,15 +463,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error' });
 });
 
-// Start server if running directly (not in Vercel)
-if (require.main === module) {
-  const PORT = process.env.PORT || 3004;
-  app.listen(PORT, () => {
-    console.log(`🚀 Fathi.vlogs API running on port ${PORT}`);
-    console.log(`📍 Environment: ${isProduction ? 'production' : 'development'}`);
-    console.log(`☁️  Cloudinary: ${!!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) ? 'enabled' : 'disabled (using base64 fallback)'}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-  });
-}
-
 module.exports = app;
