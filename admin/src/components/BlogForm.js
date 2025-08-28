@@ -24,9 +24,8 @@ const BlogForm = () => {
   // Helper function to get full image URL
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return '';
-    if (imageUrl.startsWith('http')) return imageUrl;
-    // For relative URLs, prepend the API base URL
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    if (imageUrl.startsWith('http') || imageUrl.startsWith('data:')) return imageUrl;
+    const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
     return imageUrl.startsWith('/api/') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
   };
 
