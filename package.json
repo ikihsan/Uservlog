@@ -1,8 +1,5 @@
 {
   "name": "fathi-vlogs",
   "version": "1.0.0",
-  "description": "Fathi.vlogs - A modern blog application",
-  "scripts": {
-    "build": "cd frontend && npm install && npm run build"
-  }
+  "description": "Fathi.vlogs - A modern blog application"
 }
