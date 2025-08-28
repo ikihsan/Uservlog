@@ -19,15 +19,20 @@
       "dest": "/api/index.js"
     },
     {
-      "headers": {
-        "host": "adminfathima.coms.codes"
-      },
-      "src": "/(.*)",
-      "dest": "/admin"
+      "src": "/admin",
+      "dest": "/frontend/build/index.html"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "/frontend/build/index.html"
     },
     {
       "src": "/static/(.*)",
       "dest": "/frontend/build/static/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg))",
+      "dest": "/frontend/build/$1"
     },
     {
       "src": "/(.*)",
