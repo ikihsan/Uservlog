@@ -140,14 +140,16 @@ if (!process.env.JWT_SECRET && isProduction) {
   console.warn('⚠️  WARNING: Using default JWT secret in production. Set JWT_SECRET environment variable.');
 }
 
+// Initialize file paths first
+const adminFile = path.join(dataDir, 'admin.json');
+const blogsFile = path.join(dataDir, 'blogs.json');
+
 // Initialize data files on startup
 console.log(`🔧 Initializing data files...`);
 const initialAdmin = getAdmin();
 const initialBlogs = getBlogs();
 console.log(`👤 Admin initialized: ${initialAdmin.username}`);
 console.log(`📚 Blogs initialized: ${initialBlogs.length} blogs loaded`);
-const adminFile = path.join(dataDir, 'admin.json');
-const blogsFile = path.join(dataDir, 'blogs.json');
 
 // Ensure data directory exists with proper error handling
 try {
