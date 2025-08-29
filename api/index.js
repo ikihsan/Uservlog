@@ -199,9 +199,9 @@ function writeJsonSafe(file, data) {
   }
 }
 function getAdmin() { return readJsonSafe(adminFile, initAdmin()); }
-function saveAdmin(admin) { writeJsonSafe(adminFile, admin); }
+function saveAdmin(admin) { return writeJsonSafe(adminFile, admin); }
 function getBlogs() { return readJsonSafe(blogsFile, initBlogs()); }
-function saveBlogs(blogs) { writeJsonSafe(blogsFile, blogs); }
+function saveBlogs(blogs) { return writeJsonSafe(blogsFile, blogs); }
 function initAdmin() {
   const admin = { username: 'admin', password: bcrypt.hashSync('admin123', 10), lastLogin: null };
   writeJsonSafe(adminFile, admin);
@@ -365,11 +365,23 @@ app.post('/api/blogs', authMiddleware, upload.single('image'), async (req, res) 
 
 // Update blog
 app.put('/api/blogs/:id', authMiddleware, upload.single('image'), async (req, res) => {
+  console.log(`✏️ Updating blog: ${req.params.id}`);
+  console.log(`📝 Request body:`, req.body);
+  console.log(`🖼️ Image file:`, req.file ? 'Present' : 'None');
+  
   try {
     const { title, description, content, tags, isPublished } = req.body || {};
+    console.log(`📚 Loading existing blogs...`);
     const blogs = getBlogs();
     const idx = blogs.findIndex(b => b._id === req.params.id);
-    if (idx === -1) return res.status(404).json({ message: 'Blog not found' });
+    
+    if (idx === -1) {
+      console.log(`❌ Blog not found: ${req.params.id}`);
+      return res.status(404).json({ message: 'Blog not found' });
+    }
+    
+    console.log(`📄 Found blog at index ${idx}: ${blogs[idx].title}`);
+    
     const updated = {
       ...blogs[idx],
       title: title?.trim() || blogs[idx].title,
@@ -379,21 +391,38 @@ app.put('/api/blogs/:id', authMiddleware, upload.single('image'), async (req, re
       isPublished: isPublished !== undefined ? (isPublished === 'true' || isPublished === true) : blogs[idx].isPublished,
       updatedAt: new Date().toISOString()
     };
+    
     if (req.file) {
-      if (isProduction) updated.image = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
-      else {
+      console.log(`🖼️ Processing image upload for update...`);
+      if (isProduction) {
+        updated.image = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
+        console.log(`☁️ Image uploaded to external service: ${updated.image}`);
+      } else {
         // clean old local image
         if (blogs[idx].image && blogs[idx].image.startsWith('/api/uploads/')) {
           const oldPath = path.join(uploadsDir, path.basename(blogs[idx].image));
           if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath); } catch {} }
         }
         updated.image = `/api/uploads/${req.file.filename}`;
+        console.log(`💾 Image saved locally: ${updated.image}`);
       }
     }
+    
+    console.log(`📝 Updated blog data:`, { id: updated._id, title: updated.title, isPublished: updated.isPublished });
+    
     blogs[idx] = updated;
-    saveBlogs(blogs);
+    console.log(`💾 Saving updated blogs... Total count: ${blogs.length}`);
+    
+    const saveResult = saveBlogs(blogs);
+    if (!saveResult) {
+      console.error(`❌ Failed to save updated blogs to file`);
+      return res.status(500).json({ message: 'Failed to save blog data' });
+    }
+    
+    console.log(`✅ Blog updated successfully: ${updated._id}`);
     res.json({ message: 'Blog updated successfully', blog: updated });
   } catch (error) {
+    console.error(`❌ Error updating blog:`, error);
     res.status(500).json({ message: 'Error updating blog', error: error.message });
   }
 });
@@ -447,6 +476,47 @@ if (isRender || !isProduction) {
     }
   });
 }
+
+// Debug endpoint for testing authentication and file operations
+app.post('/api/debug/test-save', authMiddleware, (req, res) => {
+  console.log(`🧪 Debug: Testing file save operation`);
+  try {
+    const testData = { test: true, timestamp: new Date().toISOString() };
+    const testFile = path.join(dataDir, 'debug-test.json');
+    
+    console.log(`📁 Data directory: ${dataDir}`);
+    console.log(`📄 Test file path: ${testFile}`);
+    console.log(`✅ Directory exists: ${fs.existsSync(dataDir)}`);
+    
+    const result = writeJsonSafe(testFile, testData);
+    console.log(`💾 Write result: ${result}`);
+    
+    if (result && fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile); // cleanup
+      console.log(`🧹 Test file cleaned up`);
+      res.json({ 
+        message: 'File operations working correctly',
+        dataDir,
+        testResult: 'SUCCESS',
+        permissions: 'READ/WRITE OK'
+      });
+    } else {
+      res.status(500).json({ 
+        message: 'File write failed',
+        dataDir,
+        testResult: 'FAILED',
+        permissions: 'WRITE ERROR'
+      });
+    }
+  } catch (error) {
+    console.error(`❌ Debug test error:`, error);
+    res.status(500).json({ 
+      message: 'Debug test failed',
+      error: error.message,
+      dataDir
+    });
+  }
+});
 
 // Error handler
 app.use((err, req, res, next) => {
