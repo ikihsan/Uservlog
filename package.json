@@ -1,8 +1,0 @@
-{
-  "name": "fathi-vlogs",
-  "version": "1.0.0",
-  "description": "Fathi.vlogs - A modern blog application",
-  "scripts": {
-    "start": "node api/index.js"
-  }
-}
