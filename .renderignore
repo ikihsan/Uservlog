@@ -1,7 +1,39 @@
+# Render deployment ignore file
+
+# Conflicting directories
 backend/
 admin/
+
+# Dependencies (will be installed during build)
 frontend/node_modules/
 api/node_modules/
+node_modules/
+
+# Development files
 .git/
+.gitignore
+*.md
+!RENDER_SETUP.md
 *.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Environment files
 .env
+.env.local
+.env.development.local
+
+# Backup files
+*.backup
+*.bak
+
+# Development uploads
+api/uploads/
+uploads/

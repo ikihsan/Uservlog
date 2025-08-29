@@ -8,14 +8,62 @@ const fs = require('fs');
 
 const app = express();
 
-// Env
-const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+// Environment detection - Render, Vercel, or local
+const isRender = !!process.env.RENDER;
+const isVercel = !!process.env.VERCEL;
+const isProduction = process.env.NODE_ENV === 'production' || isVercel;
 
-// Multer storage: memory on Vercel, disk locally
+console.log(`🚀 Starting Fathi.vlogs API`);
+console.log(`📍 Environment: ${isRender ? 'Render' : isVercel ? 'Vercel' : 'Local'}`);
+
+// Enhanced CORS configuration
+app.use(cors({
+  origin: isProduction 
+    ? [
+        'https://fathivlog.vercel.app',
+        'https://fathi-vlogs.onrender.com',
+        /\.vercel\.app$/,
+        /\.onrender\.com$/
+      ]
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
+}));
+
+// Middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Trust proxy for Render
+if (isRender) {
+  app.set('trust proxy', 1);
+}
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: isRender ? 'render' : isVercel ? 'vercel' : 'local',
+    uptime: process.uptime()
+  });
+});
+
+// API health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Fathi.vlogs API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Enhanced multer storage configuration
 const uploadsDir = path.join(__dirname, 'uploads');
-const storage = isProduction
-  ? multer.memoryStorage()
-  : multer.diskStorage({
+const storage = (isProduction && !isRender)
+  ? multer.memoryStorage() // Memory for Vercel serverless
+  : multer.diskStorage({   // Disk for Render and local
       destination: (req, file, cb) => {
         if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
         cb(null, uploadsDir);
@@ -67,13 +115,26 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve local uploads only in dev
-if (!isProduction) {
+// Static file serving for uploads (only in non-serverless environments)
+if (!isVercel) {
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
   app.use('/api/uploads', express.static(uploadsDir));
 }
 
-// Data storage: /tmp in prod, repo folder in dev
-const dataDir = isProduction ? '/tmp/blog-data' : path.join(__dirname, 'data');
+// Enhanced data storage configuration
+const dataDir = isProduction && !isRender 
+  ? '/tmp/blog-data'  // Vercel serverless
+  : isRender 
+    ? '/opt/render/project/src/data'  // Render persistent storage
+    : path.join(__dirname, 'data');   // Local development
+
+console.log(`💾 Data directory: ${dataDir}`);
+
+// JWT Secret configuration
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-please-change-in-production';
+if (!process.env.JWT_SECRET && isProduction) {
+  console.warn('⚠️  WARNING: Using default JWT secret in production. Set JWT_SECRET environment variable.');
+}
 const adminFile = path.join(dataDir, 'admin.json');
 const blogsFile = path.join(dataDir, 'blogs.json');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -133,7 +194,7 @@ app.post('/api/auth/login', (req, res) => {
     if (username !== admin.username) return res.status(401).json({ message: 'Invalid credentials' });
     const ok = bcrypt.compareSync(password, admin.password);
     if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
-    const token = jwt.sign({ username: admin.username }, 'your-secret-key', { expiresIn: '24h' });
+    const token = jwt.sign({ username: admin.username }, JWT_SECRET, { expiresIn: '24h' });
     admin.lastLogin = new Date().toISOString();
     saveAdmin(admin);
     res.json({ message: 'Login successful', token, user: { username: admin.username } });
@@ -146,7 +207,7 @@ app.get('/api/auth/verify', (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ message: 'No token provided' });
-    const decoded = jwt.verify(token, 'your-secret-key');
+    const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ valid: true, user: decoded });
   } catch {
     res.status(401).json({ message: 'Invalid token' });
@@ -274,18 +335,78 @@ app.delete('/api/blogs/:id', (req, res) => {
   }
 });
 
+// Serve static files from root directory (for Render deployment)
+if (isRender || !isProduction) {
+  const staticPath = isRender 
+    ? '/opt/render/project/src'  // Render root
+    : path.join(__dirname, '..');  // Local root
+  
+  console.log(`🌐 Serving static files from: ${staticPath}`);
+  
+  // Serve static assets
+  app.use('/static', express.static(path.join(staticPath, 'static')));
+  app.use('/images', express.static(path.join(staticPath, 'images')));
+  app.use('/favicon.ico', express.static(path.join(staticPath, 'favicon.ico')));
+  app.use('/manifest.json', express.static(path.join(staticPath, 'manifest.json')));
+  app.use('/robots.txt', express.static(path.join(staticPath, 'robots.txt')));
+  
+  // Serve index.html for all non-API routes (SPA fallback)
+  app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'API endpoint not found' });
+    }
+    
+    const indexPath = path.join(staticPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send('Frontend build not found. Please run build command.');
+    }
+  });
+}
+
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ message: 'Internal server error' });
+  console.error('API Error:', err);
+  res.status(500).json({ 
+    message: 'Internal server error',
+    error: isProduction ? 'Something went wrong' : err.message
+  });
 });
 
-// Start server for Render deployment
+// Enhanced server startup for Render
 const PORT = process.env.PORT || 10000;
-if (process.env.NODE_ENV !== 'production' || process.env.RENDER) {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📝 Blog API ready at http://localhost:${PORT}/api`);
+
+if (isRender || (!isProduction && !isVercel)) {
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Fathi.vlogs server running on port ${PORT}`);
+    console.log(`📝 API endpoint: http://localhost:${PORT}/api`);
+    console.log(`🌐 Frontend: http://localhost:${PORT}`);
+    console.log(`💚 Health check: http://localhost:${PORT}/health`);
+  });
+
+  // Graceful shutdown handling
+  const gracefulShutdown = (signal) => {
+    console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+    server.close(() => {
+      console.log('✅ Server closed. Goodbye!');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (err) => {
+    console.error('💥 Uncaught Exception:', err);
+    process.exit(1);
+  });
+  
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
   });
 }
 

@@ -3,8 +3,10 @@
   "version": "1.0.0", 
   "description": "Fathi.vlogs - Full-stack blog application for Render",
   "scripts": {
-    "build": "npm --prefix frontend install && npm --prefix frontend run build && cp -r frontend/build/* . && npm --prefix api install",
-    "start": "cd api && node index.js"
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && node scripts/copy-build.js && npm --prefix api install",
+    "start": "cd api && node index.js",
+    "dev": "cd api && node index.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "engines": {
     "node": ">=18.0.0"
