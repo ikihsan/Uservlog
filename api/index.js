@@ -6,6 +6,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// Import authentication middleware
+const authMiddleware = require('./middleware/auth');
+
 const app = express();
 
 // Environment detection - Render, Vercel, or local
@@ -125,26 +128,73 @@ if (!isVercel) {
 const dataDir = isProduction && !isRender 
   ? '/tmp/blog-data'  // Vercel serverless
   : isRender 
-    ? '/opt/render/project/src/data'  // Render persistent storage
+    ? path.join(__dirname, '..', 'data')  // Render: relative to project root
     : path.join(__dirname, 'data');   // Local development
 
 console.log(`💾 Data directory: ${dataDir}`);
+console.log(`🌍 Environment: Render=${isRender}, Vercel=${isVercel}, Production=${isProduction}`);
 
 // JWT Secret configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-please-change-in-production';
 if (!process.env.JWT_SECRET && isProduction) {
   console.warn('⚠️  WARNING: Using default JWT secret in production. Set JWT_SECRET environment variable.');
 }
+
+// Initialize data files on startup
+console.log(`🔧 Initializing data files...`);
+const initialAdmin = getAdmin();
+const initialBlogs = getBlogs();
+console.log(`👤 Admin initialized: ${initialAdmin.username}`);
+console.log(`📚 Blogs initialized: ${initialBlogs.length} blogs loaded`);
 const adminFile = path.join(dataDir, 'admin.json');
 const blogsFile = path.join(dataDir, 'blogs.json');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-// Helpers
-function readJsonSafe(file, fallback) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
+// Ensure data directory exists with proper error handling
+try {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log(`✅ Created data directory: ${dataDir}`);
+  } else {
+    console.log(`📁 Data directory exists: ${dataDir}`);
+  }
+  
+  // Test write permissions
+  const testFile = path.join(dataDir, 'test.json');
+  fs.writeFileSync(testFile, '{"test":true}');
+  fs.unlinkSync(testFile);
+  console.log(`✅ Data directory is writable`);
+} catch (error) {
+  console.error(`❌ Data directory error:`, error.message);
+  console.error(`📍 Attempted path: ${dataDir}`);
 }
+
+// Enhanced file operations with logging
+function readJsonSafe(file, fallback) {
+  try {
+    if (!fs.existsSync(file)) {
+      console.log(`📄 File doesn't exist, creating: ${file}`);
+      return fallback;
+    }
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    console.log(`📖 Successfully read: ${path.basename(file)}`);
+    return data;
+  } catch (error) {
+    console.error(`❌ Error reading ${path.basename(file)}:`, error.message);
+    return fallback;
+  }
+}
+
 function writeJsonSafe(file, data) {
-  try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); } catch {}
+  try {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+    console.log(`💾 Successfully wrote: ${path.basename(file)}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Error writing ${path.basename(file)}:`, error.message);
+    console.error(`📍 File path: ${file}`);
+    console.error(`📁 Directory exists: ${fs.existsSync(path.dirname(file))}`);
+    return false;
+  }
 }
 function getAdmin() { return readJsonSafe(adminFile, initAdmin()); }
 function saveAdmin(admin) { writeJsonSafe(adminFile, admin); }
@@ -236,7 +286,7 @@ app.get('/api/blogs/:id', (req, res) => {
 });
 
 // Admin list with pagination
-app.get('/api/blogs/admin/all', (req, res) => {
+app.get('/api/blogs/admin/all', authMiddleware, (req, res) => {
   try {
     const page = parseInt(req.query.page || '1', 10);
     const limit = parseInt(req.query.limit || '10', 10);
@@ -250,16 +300,34 @@ app.get('/api/blogs/admin/all', (req, res) => {
 });
 
 // Create blog
-app.post('/api/blogs', upload.single('image'), async (req, res) => {
+app.post('/api/blogs', authMiddleware, upload.single('image'), async (req, res) => {
+  console.log(`🆕 Creating new blog...`);
+  console.log(`📝 Request body:`, req.body);
+  console.log(`🖼️ Image file:`, req.file ? 'Present' : 'None');
+  
   try {
     const { title, description, content, tags, isPublished } = req.body || {};
-    if (!title?.trim() || !description?.trim() || !content?.trim()) return res.status(400).json({ message: 'Title, description and content are required' });
+    if (!title?.trim() || !description?.trim() || !content?.trim()) {
+      console.log(`❌ Missing required fields`);
+      return res.status(400).json({ message: 'Title, description and content are required' });
+    }
+    
+    console.log(`📚 Loading existing blogs...`);
     const blogs = getBlogs();
+    console.log(`📊 Current blog count: ${blogs.length}`);
+    
     let imageUrl = '';
     if (req.file) {
-      if (isProduction) imageUrl = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
-      else imageUrl = `/api/uploads/${req.file.filename}`;
+      console.log(`🖼️ Processing image upload...`);
+      if (isProduction) {
+        imageUrl = await uploadImageToExternal(req.file.buffer, req.file.originalname, req.file.mimetype);
+        console.log(`☁️ Image uploaded to external service: ${imageUrl}`);
+      } else {
+        imageUrl = `/api/uploads/${req.file.filename}`;
+        console.log(`💾 Image saved locally: ${imageUrl}`);
+      }
     }
+    
     const newBlog = {
       _id: Date.now().toString(),
       title: title.trim(),
@@ -273,16 +341,28 @@ app.post('/api/blogs', upload.single('image'), async (req, res) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    
+    console.log(`📄 New blog created:`, { id: newBlog._id, title: newBlog.title, isPublished: newBlog.isPublished });
+    
     blogs.unshift(newBlog);
-    saveBlogs(blogs);
+    console.log(`💾 Saving blogs... Total count: ${blogs.length}`);
+    
+    const saveResult = saveBlogs(blogs);
+    if (!saveResult) {
+      console.error(`❌ Failed to save blogs to file`);
+      return res.status(500).json({ message: 'Failed to save blog data' });
+    }
+    
+    console.log(`✅ Blog created successfully: ${newBlog._id}`);
     res.status(201).json({ message: 'Blog created successfully', blog: newBlog });
   } catch (error) {
+    console.error(`❌ Error creating blog:`, error);
     res.status(500).json({ message: 'Error creating blog', error: error.message });
   }
 });
 
 // Update blog
-app.put('/api/blogs/:id', upload.single('image'), async (req, res) => {
+app.put('/api/blogs/:id', authMiddleware, upload.single('image'), async (req, res) => {
   try {
     const { title, description, content, tags, isPublished } = req.body || {};
     const blogs = getBlogs();
@@ -317,7 +397,7 @@ app.put('/api/blogs/:id', upload.single('image'), async (req, res) => {
 });
 
 // Delete blog
-app.delete('/api/blogs/:id', (req, res) => {
+app.delete('/api/blogs/:id', authMiddleware, (req, res) => {
   try {
     const blogs = getBlogs();
     const idx = blogs.findIndex(b => b._id === req.params.id);
@@ -338,7 +418,7 @@ app.delete('/api/blogs/:id', (req, res) => {
 // Serve static files from root directory (for Render deployment)
 if (isRender || !isProduction) {
   const staticPath = isRender 
-    ? '/opt/render/project/src'  // Render root
+    ? path.join(__dirname, '..')  // Render: project root directory
     : path.join(__dirname, '..');  // Local root
   
   console.log(`🌐 Serving static files from: ${staticPath}`);
