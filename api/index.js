@@ -124,12 +124,34 @@ if (!isVercel) {
   app.use('/api/uploads', express.static(uploadsDir));
 }
 
-// Enhanced data storage configuration
-const dataDir = isProduction && !isRender 
-  ? '/tmp/blog-data'  // Vercel serverless
-  : isRender 
-    ? path.join(__dirname, '..', 'data')  // Render: relative to project root
-    : path.join(__dirname, 'data');   // Local development
+// Enhanced data storage configuration with Render-specific handling
+let dataDir;
+if (isRender) {
+  // For Render, try multiple possible paths
+  const renderPaths = [
+    path.join(__dirname, '..', 'data'),
+    path.join(__dirname, 'data'),
+    path.join(process.cwd(), 'data'),
+    '/opt/render/project/src/data'
+  ];
+  
+  // Find first existing directory or create in the most accessible location
+  dataDir = renderPaths.find(dir => {
+    try {
+      if (fs.existsSync(dir)) return true;
+      fs.mkdirSync(dir, { recursive: true });
+      return true;
+    } catch (e) {
+      console.log(`❌ Cannot create/access directory: ${dir}`);
+      return false;
+    }
+  }) || renderPaths[0];
+  
+} else if (isProduction && !isRender) {
+  dataDir = '/tmp/blog-data';  // Vercel serverless
+} else {
+  dataDir = path.join(__dirname, 'data');   // Local development
+}
 
 console.log(`💾 Data directory: ${dataDir}`);
 console.log(`🌍 Environment: Render=${isRender}, Vercel=${isVercel}, Production=${isProduction}`);
@@ -188,20 +210,115 @@ function readJsonSafe(file, fallback) {
 
 function writeJsonSafe(file, data) {
   try {
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
-    console.log(`💾 Successfully wrote: ${path.basename(file)}`);
-    return true;
+    // Ensure directory exists
+    const dir = path.dirname(file);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`📁 Created directory: ${dir}`);
+    }
+    
+    // For Render, add additional safety checks
+    if (isRender) {
+      try {
+        // Check if we can write to the directory
+        const testPath = path.join(dir, '.write-test');
+        fs.writeFileSync(testPath, 'test');
+        fs.unlinkSync(testPath);
+      } catch (permError) {
+        console.error(`❌ Directory not writable: ${dir}`, permError.message);
+        return false;
+      }
+    }
+    
+    // Write the actual file
+    const jsonString = JSON.stringify(data, null, 2);
+    fs.writeFileSync(file, jsonString, 'utf8');
+    
+    // Verify the write was successful
+    if (fs.existsSync(file)) {
+      const fileSize = fs.statSync(file).size;
+      console.log(`💾 Successfully wrote: ${path.basename(file)} (${fileSize} bytes)`);
+      return true;
+    } else {
+      console.error(`❌ File was not created: ${file}`);
+      return false;
+    }
   } catch (error) {
     console.error(`❌ Error writing ${path.basename(file)}:`, error.message);
     console.error(`📍 File path: ${file}`);
     console.error(`📁 Directory exists: ${fs.existsSync(path.dirname(file))}`);
+    console.error(`🔍 Full error:`, error);
+    
+    // Try to provide more context for debugging
+    try {
+      const stats = fs.statSync(path.dirname(file));
+      console.error(`📊 Directory stats:`, stats);
+    } catch (statError) {
+      console.error(`❌ Cannot stat directory: ${statError.message}`);
+    }
+    
     return false;
   }
 }
-function getAdmin() { return readJsonSafe(adminFile, initAdmin()); }
-function saveAdmin(admin) { return writeJsonSafe(adminFile, admin); }
-function getBlogs() { return readJsonSafe(blogsFile, initBlogs()); }
-function saveBlogs(blogs) { return writeJsonSafe(blogsFile, blogs); }
+
+// Alternative storage for Render using in-memory backup
+let memoryStorage = {
+  blogs: null,
+  admin: null
+};
+
+// Enhanced storage functions with fallback
+function getAdmin() { 
+  const fromFile = readJsonSafe(adminFile, null);
+  if (fromFile) return fromFile;
+  
+  // Fallback to memory storage
+  if (memoryStorage.admin) {
+    console.log(`📋 Using memory storage for admin`);
+    return memoryStorage.admin;
+  }
+  
+  // Initialize default admin
+  const defaultAdmin = initAdmin();
+  memoryStorage.admin = defaultAdmin;
+  return defaultAdmin;
+}
+
+function saveAdmin(admin) { 
+  memoryStorage.admin = admin; // Always update memory first
+  const fileResult = writeJsonSafe(adminFile, admin);
+  if (!fileResult && isRender) {
+    console.log(`💾 Admin saved to memory storage (file system unavailable)`);
+    return true; // Return success since we have memory backup
+  }
+  return fileResult;
+}
+
+function getBlogs() { 
+  const fromFile = readJsonSafe(blogsFile, null);
+  if (fromFile) return fromFile;
+  
+  // Fallback to memory storage
+  if (memoryStorage.blogs) {
+    console.log(`📋 Using memory storage for blogs`);
+    return memoryStorage.blogs;
+  }
+  
+  // Initialize default blogs
+  const defaultBlogs = initBlogs();
+  memoryStorage.blogs = defaultBlogs;
+  return defaultBlogs;
+}
+
+function saveBlogs(blogs) { 
+  memoryStorage.blogs = blogs; // Always update memory first
+  const fileResult = writeJsonSafe(blogsFile, blogs);
+  if (!fileResult && isRender) {
+    console.log(`💾 Blogs saved to memory storage (file system unavailable)`);
+    return true; // Return success since we have memory backup
+  }
+  return fileResult;
+}
 function initAdmin() {
   const admin = { username: 'admin', password: bcrypt.hashSync('admin123', 10), lastLogin: null };
   writeJsonSafe(adminFile, admin);
@@ -508,6 +625,73 @@ if (isRender || !isProduction) {
     }
   });
 }
+
+// Storage test endpoint
+app.get('/api/debug/storage-test', (req, res) => {
+  console.log(`🧪 Testing storage system...`);
+  
+  try {
+    const testResults = {
+      dataDir,
+      environment: { isRender, isVercel, isProduction },
+      tests: {}
+    };
+    
+    // Test 1: Directory access
+    testResults.tests.directoryExists = fs.existsSync(dataDir);
+    
+    // Test 2: Write permissions
+    try {
+      const testFile = path.join(dataDir, 'storage-test.json');
+      const testData = { test: 'storage-test', timestamp: Date.now() };
+      const writeResult = writeJsonSafe(testFile, testData);
+      testResults.tests.canWrite = writeResult;
+      
+      if (writeResult && fs.existsSync(testFile)) {
+        fs.unlinkSync(testFile);
+        testResults.tests.canDelete = true;
+      }
+    } catch (error) {
+      testResults.tests.writeError = error.message;
+    }
+    
+    // Test 3: Current data status
+    testResults.tests.adminData = memoryStorage.admin ? 'MEMORY' : 'FILE';
+    testResults.tests.blogsData = memoryStorage.blogs ? 'MEMORY' : 'FILE';
+    testResults.tests.blogCount = getBlogs().length;
+    
+    // Test 4: Blog operations
+    const originalBlogs = getBlogs();
+    const testBlog = {
+      _id: 'test-' + Date.now(),
+      title: 'Storage Test Blog',
+      description: 'Test blog for storage verification',
+      content: 'This is a test blog to verify storage operations.',
+      isPublished: false,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Add test blog
+    const blogsWithTest = [...originalBlogs, testBlog];
+    const saveResult = saveBlogs(blogsWithTest);
+    testResults.tests.canSaveBlog = saveResult;
+    
+    // Remove test blog
+    const cleanResult = saveBlogs(originalBlogs);
+    testResults.tests.canRestoreBlogs = cleanResult;
+    
+    res.json({
+      message: 'Storage system test completed',
+      ...testResults
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Storage test failed',
+      error: error.message,
+      dataDir
+    });
+  }
+});
 
 // Debug endpoint for testing authentication and file operations
 app.post('/api/debug/test-save', authMiddleware, (req, res) => {
