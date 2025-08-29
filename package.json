@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Fathi.vlogs - A modern blog application",
   "scripts": {
-    "build": "cd frontend && npm ci && npm run build && cd .. && rm -rf public && mkdir -p public && cp -r frontend/build/* public/",
     "start": "node api/index.js"
   }
 }
