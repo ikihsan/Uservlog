@@ -1,5 +1,9 @@
 {
   "name": "fathi-vlogs",
   "version": "1.0.0",
-  "description": "Fathi.vlogs - A modern blog application"
+  "description": "Fathi.vlogs - A modern blog application",
+  "scripts": {
+    "build": "cd frontend && npm ci && npm run build && cd .. && cp -r frontend/build/* . || true",
+    "start": "node api/index.js"
+  }
 }
