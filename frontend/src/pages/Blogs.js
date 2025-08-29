@@ -15,15 +15,15 @@ const Blogs = () => {
       setLoading(page === 1);
       setSearchLoading(search !== '');
       
-      const response = await blogAPI.getAllBlogs({ 
+      const response = await blogAPI.getPublishedBlogs({ 
         page, 
         limit: 9,
         search 
       });
       
-      setBlogs(response.data.blogs);
-      setTotalPages(response.data.totalPages);
-      setCurrentPage(response.data.currentPage);
+      setBlogs(response.data.blogs || response.data);
+      setTotalPages(response.data.totalPages || 1);
+      setCurrentPage(response.data.currentPage || page);
     } catch (error) {
       console.error('Error fetching blogs:', error);
     } finally {

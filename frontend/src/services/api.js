@@ -52,6 +52,10 @@ export const blogAPI = {
   getAllBlogs: (params = {}) => 
     api.get('/blogs/admin/all', { params }),
 
+  // Get published blogs (public)
+  getPublishedBlogs: (params = {}) => 
+    api.get('/blogs', { params }),
+
   // Get single blog by ID
   getBlogById: (id) => 
     api.get(`/blogs/${id}`),

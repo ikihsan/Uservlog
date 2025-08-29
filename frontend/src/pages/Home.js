@@ -9,8 +9,8 @@ const Home = () => {
   useEffect(() => {
     const fetchFeaturedBlogs = async () => {
       try {
-        const response = await blogAPI.getAllBlogs({ limit: 3 });
-        setFeaturedBlogs(response.data.blogs);
+        const response = await blogAPI.getPublishedBlogs({ limit: 3 });
+        setFeaturedBlogs(response.data.blogs || response.data);
       } catch (error) {
         console.error('Error fetching featured blogs:', error);
       } finally {

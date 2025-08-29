@@ -266,12 +266,44 @@ app.get('/api/auth/verify', (req, res) => {
   }
 });
 
-// Blogs (public)
+// Blogs (public) - with pagination and search
 app.get('/api/blogs', (req, res) => {
   try {
-    const published = getBlogs().filter(b => b.isPublished);
-    res.json(published);
-  } catch (e) {
+    console.log(`📚 Fetching public blogs with params:`, req.query);
+    
+    const page = parseInt(req.query.page || '1', 10);
+    const limit = parseInt(req.query.limit || '10', 10);
+    const search = req.query.search || '';
+    
+    let blogs = getBlogs().filter(b => b.isPublished);
+    
+    // Apply search filter if provided
+    if (search) {
+      const searchLower = search.toLowerCase();
+      blogs = blogs.filter(blog => 
+        blog.title.toLowerCase().includes(searchLower) ||
+        blog.description.toLowerCase().includes(searchLower) ||
+        blog.content.toLowerCase().includes(searchLower) ||
+        (blog.tags && blog.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+      );
+    }
+    
+    // Sort by publishDate (newest first)
+    blogs.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
+    
+    const start = (page - 1) * limit;
+    const slice = blogs.slice(start, start + limit);
+    
+    console.log(`📊 Public blogs result: ${slice.length} of ${blogs.length} total published blogs`);
+    
+    res.json({ 
+      blogs: slice, 
+      totalBlogs: blogs.length, 
+      currentPage: page, 
+      totalPages: Math.ceil(blogs.length / limit) 
+    });
+  } catch (error) {
+    console.error(`❌ Error fetching public blogs:`, error);
     res.status(500).json({ message: 'Error fetching blogs' });
   }
 });
