@@ -279,5 +279,15 @@ app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ message: 'Internal server error' });
 });
+
+// Start server for Render deployment
+const PORT = process.env.PORT || 10000;
+if (process.env.NODE_ENV !== 'production' || process.env.RENDER) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📝 Blog API ready at http://localhost:${PORT}/api`);
+  });
+}
+
 // Export Vercel Serverless function handler
 module.exports = app;
