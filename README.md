@@ -1,6 +1,6 @@
 # UserBlog Web Application
 
-# Fathi.vlogs - Personal Engineering Blog
+# User.vlogs - Personal Engineering Blog
 
 Welcome to **Fathi.vlogs**, a personal blog platform where I share my journey as an engineering student, web development projects, and technical insights. Built with modern web technologies and a futuristic dark theme design.
 
