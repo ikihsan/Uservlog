@@ -63,19 +63,11 @@ const Contact = () => {
           </div>
 
           <div className="card">
-            <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>📱 Social Media</h3>
-            <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '16px' }}>
-              Follow me on social media for updates and behind-the-scenes content.
+            <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>🚀 Project Collaborations</h3>
+            <p style={{ color: '#94a3b8', lineHeight: '1.7' }}>
+              Interested in collaborating on tech projects, tutorials, or content creation? 
+              I'm always open to exciting opportunities and partnerships in the developer community.
             </p>
-            <a 
-              href="https://www.instagram.com/fathma.nk" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="social-link"
-              style={{ display: 'inline-block' }}
-            >
-              📸 @fathma.nk
-            </a>
           </div>
 
           <div className="card">

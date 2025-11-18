@@ -15,7 +15,7 @@ const Blogs = () => {
       setLoading(page === 1);
       setSearchLoading(search !== '');
       
-      const response = await blogAPI.getAllBlogs({ 
+      const response = await blogAPI.getBlogs({ 
         page, 
         limit: 9,
         search 

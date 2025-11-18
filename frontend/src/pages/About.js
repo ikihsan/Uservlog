@@ -1,6 +1,6 @@
 import React from 'react';
 //Import your photo - you'll need to place your photo file in the assets/images folder
-import profilePhoto from '../assets/images/fathima-profile.jpg';
+import profilePhoto from '../assets/images/lifevlog-profile.jpg';
 
 const About = () => {
   return (
@@ -31,7 +31,7 @@ const About = () => {
               
               { <img 
                 src={profilePhoto} 
-                alt="Fathima NK" 
+                alt="Lifevlog Author"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -50,25 +50,25 @@ const About = () => {
               lineHeight: '1.7',
               textAlign: 'center'
             }}>
-              Hi there! I'm <span style={{ color: '#6366f1', fontWeight: '600' }}>Fathima NK</span>, 
-              a 22-year-old engineering student sharing my journey, thoughts, and experiences through this blog.
+              Welcome to <span style={{ color: '#6366f1', fontWeight: '600' }}>Lifevlog</span>, 
+              where I share my adventures in engineering, technology, and personal development.
             </p>
 
             <div className="card" style={{ textAlign: 'left', marginBottom: '32px' }}>
-              <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>About Me</h3>
+              <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>Who I Am</h3>
               <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '20px' }}>
-                I'm currently pursuing my engineering degree at <span style={{ color: '#6366f1', fontWeight: '500' }}>KMCT College of Engineering</span>. 
-                At 22, I'm passionate about technology, learning, and sharing my experiences as I navigate through 
-                my academic journey and personal growth.
+                I'm a passionate engineering student exploring the intersection of technology and creativity. 
+                Through this blog, I document my learning journey, share practical insights, and connect with 
+                fellow tech enthusiasts who are shaping the future.
               </p>
               <p style={{ color: '#94a3b8', lineHeight: '1.7' }}>
-                This blog is my digital space where I document my engineering adventures, share insights 
-                about student life, and connect with fellow learners and tech enthusiasts.
+                My goal is to make complex technical concepts accessible and inspire others to pursue their 
+                interests in STEM fields, regardless of their background or experience level.
               </p>
             </div>
 
             <div className="card" style={{ textAlign: 'left', marginBottom: '32px' }}>
-              <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>My Journey</h3>
+              <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>My Interests</h3>
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -82,9 +82,9 @@ const About = () => {
                   border: '1px solid rgba(99, 102, 241, 0.3)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🎓</div>
-                  <h4 style={{ color: '#e2e8f0', marginBottom: '8px', fontSize: '1.1rem' }}>Student</h4>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Engineering at KMCT College</p>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🔬</div>
+                  <h4 style={{ color: '#e2e8f0', marginBottom: '8px', fontSize: '1.1rem' }}>Research</h4>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Exploring cutting-edge technologies</p>
                 </div>
                 <div style={{ 
                   background: 'rgba(99, 102, 241, 0.1)',
@@ -93,9 +93,9 @@ const About = () => {
                   border: '1px solid rgba(99, 102, 241, 0.3)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💻</div>
-                  <h4 style={{ color: '#e2e8f0', marginBottom: '8px', fontSize: '1.1rem' }}>Tech Enthusiast</h4>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Exploring new technologies</p>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🎨</div>
+                  <h4 style={{ color: '#e2e8f0', marginBottom: '8px', fontSize: '1.1rem' }}>Design</h4>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>UI/UX and creative problem-solving</p>
                 </div>
                 <div style={{ 
                   background: 'rgba(99, 102, 241, 0.1)',
@@ -104,15 +104,15 @@ const About = () => {
                   border: '1px solid rgba(99, 102, 241, 0.3)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>✍️</div>
-                  <h4 style={{ color: '#e2e8f0', marginBottom: '8px', fontSize: '1.1rem' }}>Blogger</h4>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Sharing experiences & insights</p>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📈</div>
+                  <h4 style={{ color: '#e2e8f0', marginBottom: '8px', fontSize: '1.1rem' }}>Innovation</h4>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Building solutions for tomorrow</p>
                 </div>
               </div>
             </div>
 
             <div className="card" style={{ textAlign: 'left', marginBottom: '32px' }}>
-              <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>What I Share</h3>
+              <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>What You'll Find Here</h3>
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -126,8 +126,8 @@ const About = () => {
                   border: '1px solid rgba(168, 85, 247, 0.3)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📚</div>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Engineering Life</p>
+                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>💻</div>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Tech Tutorials</p>
                 </div>
                 <div style={{ 
                   background: 'rgba(168, 85, 247, 0.1)',
@@ -136,8 +136,8 @@ const About = () => {
                   border: '1px solid rgba(168, 85, 247, 0.3)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>💡</div>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Learning Insights</p>
+                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📝</div>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Project Updates</p>
                 </div>
                 <div style={{ 
                   background: 'rgba(168, 85, 247, 0.1)',
@@ -146,8 +146,8 @@ const About = () => {
                   border: '1px solid rgba(168, 85, 247, 0.3)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🌟</div>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Personal Growth</p>
+                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🤔</div>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Thoughts & Reflections</p>
                 </div>
                 <div style={{ 
                   background: 'rgba(168, 85, 247, 0.1)',
@@ -156,17 +156,18 @@ const About = () => {
                   border: '1px solid rgba(168, 85, 247, 0.3)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🚀</div>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Tech Projects</p>
+                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🌍</div>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Community Insights</p>
                 </div>
               </div>
             </div>
 
             <div className="card" style={{ textAlign: 'left', marginBottom: '32px' }}>
-              <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>Let's Connect</h3>
+              <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>Get In Touch</h3>
               <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '20px' }}>
-                I love connecting with fellow students, tech enthusiasts, and anyone who's interested 
-                in engineering, learning, or just sharing experiences. Feel free to reach out!
+                I'm always excited to connect with like-minded individuals, discuss new ideas, 
+                and collaborate on interesting projects. Whether you're a fellow student, 
+                a tech professional, or just curious about technology, I'd love to hear from you!
               </p>
               
               <div className="social-links" style={{
@@ -175,7 +176,7 @@ const About = () => {
                 flexWrap: 'wrap'
               }}>
                 <a 
-                  href="https://www.instagram.com/fathma.nk" 
+                  href="https://www.instagram.com/lifevlog_temp" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="social-link"
@@ -230,8 +231,8 @@ const About = () => {
                 fontSize: '1rem',
                 margin: '0'
               }}>
-                "Every engineer was first a beginner. Every expert was once a learner." <br/>
-                <span style={{ fontSize: '0.9rem', opacity: '0.8' }}>- Join me on this journey of growth and discovery!</span>
+                "Innovation distinguishes between a leader and a follower." <br/>
+                <span style={{ fontSize: '0.9rem', opacity: '0.8' }}>- Steve Jobs. Let's innovate together!</span>
               </p>
             </div>
           </div>

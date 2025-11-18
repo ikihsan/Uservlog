@@ -9,7 +9,7 @@ const Home = () => {
   useEffect(() => {
     const fetchFeaturedBlogs = async () => {
       try {
-        const response = await blogAPI.getAllBlogs({ limit: 3 });
+        const response = await blogAPI.getBlogs({ limit: 3 });
         setFeaturedBlogs(response.data.blogs);
       } catch (error) {
         console.error('Error fetching featured blogs:', error);
@@ -43,7 +43,7 @@ const Home = () => {
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
-          <h1>Welcome to fathi.vlogs</h1>
+          <h1>Welcome to Lifevlog</h1>
           <p>
             Join me on my journey as an engineering student, sharing thoughts,
             experiences, and insights from my academic and personal life.

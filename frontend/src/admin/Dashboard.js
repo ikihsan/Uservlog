@@ -209,10 +209,7 @@ const Dashboard = () => {
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '1rem'
         }}>
-          <div>
-            <h4 style={{ color: '#e2e8f0', marginBottom: '0.5rem' }}>Version</h4>
-            <p style={{ color: '#94a3b8' }}>fathi.vlogs v1.0.0</p>
-          </div>
+            <p style={{ color: '#94a3b8' }}>Lifevlog v1.0.0</p>
           <div>
             <h4 style={{ color: '#e2e8f0', marginBottom: '0.5rem' }}>Last Updated</h4>
             <p style={{ color: '#94a3b8' }}>{new Date().toLocaleDateString()}</p>

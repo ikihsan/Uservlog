@@ -1,5 +1,5 @@
 @echo off
-echo 🚀 Deploying Fathi.vlogs to Vercel...
+echo 🚀 Deploying Lifevlog to Vercel...
 
 echo 📦 Building frontend...
 cd frontend
@@ -17,5 +17,5 @@ echo 🌐 Deploying to Vercel...
 vercel --prod
 
 echo ✅ Deployment complete!
-echo 🌟 Your site should be available at: https://fathi-vlogs.vercel.app
+echo 🌟 Your site should be available at: https://lifevlog.vercel.app
 pause

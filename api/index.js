@@ -98,7 +98,7 @@ function initBlogs() {
   const blogs = [
     {
       _id: '1',
-      title: 'Welcome to Fathi.vlogs',
+      title: 'Welcome to Lifevlog',
       description: 'My journey as an engineering student exploring the world of technology, coding, and innovation.',
       content: "Welcome to my personal blog! 👋\n\nI'm Fathima, an engineering student passionate about technology...",
       image: '',
@@ -118,7 +118,7 @@ function initBlogs() {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
-    message: 'Fathi.vlogs API is running',
+    message: 'Lifevlog API is running',
     timestamp: new Date().toISOString(),
     environment: isProduction ? 'production' : 'development'
   });

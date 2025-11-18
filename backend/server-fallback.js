@@ -27,7 +27,7 @@ app.use('/api/blogs', blogRoutes);
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
-    message: 'Fathi.vlogs API is running!', 
+    message: 'Lifevlog API is running!', 
     timestamp: new Date().toISOString(),
     database: process.env.MONGODB_URI ? 'MongoDB' : 'File System',
     status: 'healthy'
@@ -36,7 +36,7 @@ app.get('/api/health', (req, res) => {
 
 // Database connection with fallback
 const connectDatabase = async () => {
-  if (process.env.MONGODB_URI && process.env.MONGODB_URI !== 'mongodb://localhost:27017/fathi-vlogs') {
+  if (process.env.MONGODB_URI && process.env.MONGODB_URI !== 'mongodb://localhost:27017/lifevlog') {
     // Try to connect to MongoDB
     try {
       const mongoose = require('mongoose');
@@ -74,9 +74,9 @@ const startServer = async () => {
       const sampleBlogs = [
         {
           _id: '1',
-          title: 'Welcome to Fathi.vlogs',
+          title: 'Welcome to Lifevlog',
           description: 'My journey as an engineering student exploring the world of technology, coding, and innovation.',
-          content: 'Welcome to my personal blog! 👋\n\nI\'m Fathima, an engineering student passionate about technology and web development. This space is where I document my learning journey, share insights about college life, and showcase the projects I\'m working on.\n\n## What You\'ll Find Here\n\n• **Engineering Journey**: My experiences navigating college life and technical studies\n• **Web Development**: Projects, tutorials, and lessons learned from building applications\n• **Learning Insights**: Tips and reflections from my academic and personal growth\n• **Tech Exploration**: Deep dives into new technologies and frameworks\n\n## Current Focus\n\nRight now, I\'m diving deep into:\n- Full-stack web development with React and Node.js\n- Database design and management\n- UI/UX principles for modern web applications\n- Cloud deployment and DevOps practices\n\n## Connect With Me\n\nI love connecting with fellow students, developers, and anyone interested in technology! Feel free to reach out through the contact section or engage with the content here.\n\nLet\'s learn and grow together in this exciting world of technology! 🚀\n\n*This blog itself is one of my projects - built from scratch using React, Node.js, and deployed on Vercel!*',
+          content: 'Welcome to my personal blog! 👋\n\nI\'m a passionate engineering student exploring the world of technology and web development. This space is where I document my learning journey, share insights about college life, and showcase the projects I\'m working on.\n\n## What You\'ll Find Here\n\n• **Engineering Journey**: My experiences navigating college life and technical studies\n• **Web Development**: Projects, tutorials, and lessons learned from building applications\n• **Learning Insights**: Tips and reflections from my academic and personal growth\n• **Tech Exploration**: Deep dives into new technologies and frameworks\n\n## Current Focus\n\nRight now, I\'m diving deep into:\n- Full-stack web development with React and Node.js\n- Database design and management\n- UI/UX principles for modern web applications\n- Cloud deployment and DevOps practices\n\n## Connect With Me\n\nI love connecting with fellow students, developers, and anyone interested in technology! Feel free to reach out through the contact section or engage with the content here.\n\nLet\'s learn and grow together in this exciting world of technology! 🚀\n\n*This blog itself is one of my projects - built from scratch using React, Node.js, and deployed on Vercel!*',
           image: '',
           publishDate: new Date().toISOString(),
           isPublished: true,

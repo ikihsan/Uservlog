@@ -6,7 +6,7 @@ const Header = ({ onLogout }) => {
     <header className="admin-header">
       <nav className="admin-nav">
         <Link to="/" className="admin-logo">
-          fathi.vlogs Admin
+          Lifevlog Admin
         </Link>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

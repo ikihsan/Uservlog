@@ -9,7 +9,7 @@ const Footer = () => {
       <div className="footer-container">
         <div className="footer-content">
           <div className="footer-section">
-            <h3 className="footer-title">fathi.vlogs</h3>
+            <h3 className="footer-title">Lifevlog</h3>
             <p className="footer-description">
               Personal blog sharing thoughts, experiences, and engineering journey.
             </p>
@@ -30,7 +30,7 @@ const Footer = () => {
             <ul className="footer-links">
               <li>
                 <a 
-                  href="https://www.instagram.com/fathma.nk" 
+                  href="https://www.instagram.com/lifevlog_temp" 
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
@@ -43,11 +43,9 @@ const Footer = () => {
         </div>
 
         <div className="footer-bottom">
-          <div className="footer-copyright">
-            <p>&copy; {currentYear} fathi.vlogs. All rights reserved.</p>
-          </div>
+            <p>&copy; {currentYear} Lifevlog. All rights reserved.</p>
           <div className="footer-credits">
-            <p>Built with ❤️ and lots of ☕ by <span className="credits-highlight">Fathima NK</span></p>
+            <p>Built with ❤️ and lots of ☕ by <span className="credits-highlight">Lifevlog Team</span></p>
           </div>
         </div>
       </div>

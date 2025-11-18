@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Fathi.vlogs Setup Script"
+echo "🚀 Lifevlog Setup Script"
 echo "========================"
 
 # Check if Node.js is installed

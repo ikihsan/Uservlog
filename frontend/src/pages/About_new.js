@@ -1,6 +1,6 @@
 import React from 'react';
 // Import your photo - you'll need to place your photo file in the assets/images folder
-// import profilePhoto from '../assets/images/fathima-profile.jpg';
+// import profilePhoto from '../assets/images/lifevlog-profile.jpg';
 
 const About = () => {
   return (
@@ -31,7 +31,7 @@ const About = () => {
               {/* Uncomment when you add your photo */}
               {/* <img 
                 src={profilePhoto} 
-                alt="Fathima NK" 
+                alt="Lifevlog Author" 
                 style={{
                   width: '100%',
                   height: '100%',
@@ -50,8 +50,7 @@ const About = () => {
               lineHeight: '1.7',
               textAlign: 'center'
             }}>
-              Hi there! I'm <span style={{ color: '#6366f1', fontWeight: '600' }}>Fathima NK</span>, 
-              a 22-year-old engineering student sharing my journey, thoughts, and experiences through this blog.
+              Hi there! I'm a passionate engineering student exploring the world of technology and web development through this blog.
             </p>
 
             <div className="card" style={{ textAlign: 'left', marginBottom: '32px' }}>

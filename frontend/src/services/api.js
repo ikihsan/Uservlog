@@ -48,6 +48,10 @@ export const authAPI = {
 
 // Blog API functions (Admin)
 export const blogAPI = {
+  // Get all blogs (public)
+  getBlogs: (params = {}) => 
+    api.get('/blogs', { params }),
+
   // Get all blogs (admin)
   getAllBlogs: (params = {}) => 
     api.get('/blogs/admin/all', { params }),
