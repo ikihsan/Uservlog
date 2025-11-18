@@ -9,10 +9,10 @@
     { "src": "^/api/.*", "dest": "/api/index.js" },
     { "src": "^/admin/(.*)", "dest": "/admin-build/$1" },
     { "src": "^/admin$", "dest": "/admin-build/index.html" },
-    { "src": "^/static/(.*)", "dest": "/static/$1" },
-    { "src": "^/favicon.ico$", "dest": "/favicon.ico" },
-    { "src": "^/manifest.json$", "dest": "/manifest.json" },
-    { "src": "^/asset-manifest.json$", "dest": "/asset-manifest.json" },
-    { "src": "^(?!/api|/admin).*$", "dest": "/index.html" }
+    { "src": "^/static/(.*)", "dest": "/build/static/$1" },
+    { "src": "^/favicon.ico$", "dest": "/build/favicon.ico" },
+    { "src": "^/manifest.json$", "dest": "/build/manifest.json" },
+    { "src": "^/asset-manifest.json$", "dest": "/build/asset-manifest.json" },
+    { "src": "^(?!/api|/admin).*$", "dest": "/build/index.html" }
   ]
 }
