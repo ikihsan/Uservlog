@@ -1,0 +1,12 @@
+{
+  "files": {
+    "main.css": "/static/css/main.e91861b5.css",
+    "main.js": "/static/js/main.4ad74053.js",
+    "static/media/lifevlog-profile.jpg": "/static/media/lifevlog-profile.25f704f0418586986f53.jpg",
+    "index.html": "/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.e91861b5.css",
+    "static/js/main.4ad74053.js"
+  ]
+}
