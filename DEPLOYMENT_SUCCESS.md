@@ -4,10 +4,6 @@
 
 Your fathi.vlogs application has been successfully deployed to Vercel with working image uploads!
 
-### 🌐 Live URLs:
-- **Production URL**: https://fathi-vlogs-5v0ajci1z-ihsans-projects-683c36d4.vercel.app
-- **Admin Panel**: https://fathi-vlogs-5v0ajci1z-ihsans-projects-683c36d4.vercel.app/admin
-- **API Health**: https://fathi-vlogs-5v0ajci1z-ihsans-projects-683c36d4.vercel.app/api/health
 
 ### 🎯 What's Working:
 
