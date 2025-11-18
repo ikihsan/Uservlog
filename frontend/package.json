@@ -14,7 +14,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "BUILD_PATH=frontend-dist react-scripts build",
+    "postbuild": "mv frontend-dist build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
